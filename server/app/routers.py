@@ -47,6 +47,9 @@ def list_orders(
     order_date: Optional[date] = Query(None, description="按日期筛选"),
     shop_name: Optional[str] = Query(None, description="按店铺名筛选（模糊）"),
     supplier_name: Optional[str] = Query(None, description="按供应商名筛选（模糊）"),
+    limit: Optional[int] = Query(
+        None, ge=1, le=100, description="返回条数上限（按最近优先）"
+    ),
     db: Session = Depends(get_db),
 ):
     query = db.query(SupplierOrder)
@@ -56,7 +59,17 @@ def list_orders(
         query = query.filter(SupplierOrder.shop_name.contains(shop_name.strip()))
     if supplier_name:
         query = query.filter(SupplierOrder.supplier_name.contains(supplier_name.strip()))
-    return query.order_by(SupplierOrder.order_date.desc(), SupplierOrder.id.desc()).all()
+    if limit is not None:
+        query = query.order_by(
+            SupplierOrder.created_at.desc(),
+            SupplierOrder.id.desc(),
+        ).limit(limit)
+    else:
+        query = query.order_by(
+            SupplierOrder.order_date.desc(),
+            SupplierOrder.id.desc(),
+        )
+    return query.all()
 
 
 @router.get("/{order_id}", response_model=OrderOut)

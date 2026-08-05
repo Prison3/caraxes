@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>供应商订单</title>
-  <link rel="stylesheet" href="/static/style.css?v=5" />
+  <link rel="stylesheet" href="/static/style.css?v=6" />
 </head>
 <body>
   <header class="topbar">
@@ -48,6 +48,27 @@
         <button type="submit" id="submitBtn">提交</button>
       </form>
       <p id="formMsg" class="msg" hidden></p>
+
+      <div class="recent-block">
+        <div class="list-head">
+          <h3>最近提交</h3>
+          <span id="recentMeta" class="meta"></span>
+        </div>
+        <div id="recentTableWrap" class="result-table-wrap" hidden>
+          <table class="result-table" id="recentTable">
+            <thead>
+              <tr>
+                <th>日期</th>
+                <th>店铺</th>
+                <th>供应商</th>
+                <th class="num">金额</th>
+              </tr>
+            </thead>
+            <tbody id="recentList"></tbody>
+          </table>
+        </div>
+        <p id="recentEmpty" class="empty">暂无提交记录</p>
+      </div>
     </section>
 
     <section id="panelQuery" class="panel tab-panel" role="tabpanel" hidden>
@@ -129,6 +150,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=5"></script>
+  <script src="/static/app.js?v=6"></script>
 </body>
 </html>

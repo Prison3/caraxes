@@ -511,3 +511,12 @@ button[type="submit"],
   margin-top: 1rem;
   text-align: center;
 }
+
+.recent-block {
+  margin-top: 1.5rem;
+}
+
+.recent-block .list-head {
+  margin-top: 0;
+  padding-top: 1rem;
+}

@@ -43,6 +43,10 @@
   const dupNo = document.getElementById("dupNo");
   const currentUser = document.getElementById("currentUser");
   const logoutBtn = document.getElementById("logoutBtn");
+  const recentList = document.getElementById("recentList");
+  const recentTableWrap = document.getElementById("recentTableWrap");
+  const recentEmpty = document.getElementById("recentEmpty");
+  const recentMeta = document.getElementById("recentMeta");
 
   let dupResolve = null;
   let shops = [];
@@ -214,8 +218,46 @@
     panelCreate.hidden = name !== "create";
     panelQuery.hidden = name !== "query";
     panelManage.hidden = name !== "manage";
+    if (name === "create") loadRecentOrders();
     if (name === "query") queryOrders();
     if (name === "manage") loadCatalog().catch((err) => showMsg(shopMsg, err.message, false));
+  }
+
+  function renderRecentOrders(orders) {
+    recentList.innerHTML = "";
+    const hasItems = orders.length > 0;
+    recentEmpty.hidden = hasItems;
+    recentEmpty.textContent = "暂无提交记录";
+    recentTableWrap.hidden = !hasItems;
+    recentMeta.textContent = hasItems ? `最近 ${orders.length} 条` : "";
+
+    for (const order of orders) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="col-date"></td>
+        <td class="col-shop"></td>
+        <td class="col-supplier"></td>
+        <td class="num col-amount"></td>
+      `;
+      tr.querySelector(".col-date").textContent = order.order_date;
+      tr.querySelector(".col-shop").textContent = order.shop_name;
+      tr.querySelector(".col-supplier").textContent = order.supplier_name;
+      tr.querySelector(".col-amount").textContent = `¥${formatMoney(order.daily_total)}`;
+      recentList.appendChild(tr);
+    }
+  }
+
+  async function loadRecentOrders() {
+    try {
+      const res = await api("/api/orders?limit=5");
+      if (!res.ok) throw new Error(await parseError(res));
+      renderRecentOrders(await res.json());
+    } catch (err) {
+      renderRecentOrders([]);
+      recentMeta.textContent = "";
+      recentEmpty.hidden = false;
+      recentEmpty.textContent = err.message || "加载最近提交失败";
+    }
   }
 
   function renderOrders(orders) {
@@ -382,7 +424,8 @@
       if (!ok) return;
       dailyTotal.value = "";
       queryDate.value = payload.order_date;
-      showMsg(formMsg, "提交成功，可到「查询」查看", true);
+      showMsg(formMsg, "提交成功", true);
+      await loadRecentOrders();
     } catch (err) {
       showMsg(formMsg, err.message || "提交失败", false);
     } finally {
@@ -459,7 +502,7 @@
     if (!meRes.ok) return;
     const me = await meRes.json();
     currentUser.textContent = me.username;
-    await loadCatalog();
+    await Promise.all([loadCatalog(), loadRecentOrders()]);
   })().catch((err) => {
     if (err.message !== "未登录") {
       showMsg(formMsg, err.message || "加载失败", false);
