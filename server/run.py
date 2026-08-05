@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
-"""启动服务: python run.py"""
+"""启动服务: python run.py [-p PORT]"""
+
+import argparse
 
 import uvicorn
 
 if __name__ == "__main__":
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    parser = argparse.ArgumentParser(description="启动供应商订单服务")
+    parser.add_argument("-p", "--port", type=int, default=8000, help="监听端口（默认 8000）")
+    args = parser.parse_args()
+    uvicorn.run("app.main:app", host="0.0.0.0", port=args.port, reload=True)

@@ -41,10 +41,21 @@
   const dupText = document.getElementById("dupText");
   const dupYes = document.getElementById("dupYes");
   const dupNo = document.getElementById("dupNo");
+  const currentUser = document.getElementById("currentUser");
+  const logoutBtn = document.getElementById("logoutBtn");
 
   let dupResolve = null;
   let shops = [];
   let suppliers = [];
+
+  async function api(url, options = {}) {
+    const res = await fetch(url, { credentials: "include", ...options });
+    if (res.status === 401) {
+      location.href = "/login";
+      throw new Error("未登录");
+    }
+    return res;
+  }
 
   function todayISO() {
     const d = new Date();
@@ -144,8 +155,8 @@
 
   async function loadCatalog() {
     const [shopRes, supplierRes] = await Promise.all([
-      fetch("/api/shops"),
-      fetch("/api/suppliers"),
+      api("/api/shops"),
+      api("/api/suppliers"),
     ]);
     if (!shopRes.ok) throw new Error(await parseError(shopRes));
     if (!supplierRes.ok) throw new Error(await parseError(supplierRes));
@@ -168,7 +179,7 @@
       noText: "取消",
     });
     if (!ok) return;
-    const res = await fetch(`/api/shops/${item.id}`, { method: "DELETE" });
+    const res = await api(`/api/shops/${item.id}`, { method: "DELETE" });
     if (!res.ok && res.status !== 204) {
       showMsg(shopMsg, await parseError(res), false);
       return;
@@ -185,7 +196,7 @@
       noText: "取消",
     });
     if (!ok) return;
-    const res = await fetch(`/api/suppliers/${item.id}`, { method: "DELETE" });
+    const res = await api(`/api/suppliers/${item.id}`, { method: "DELETE" });
     if (!res.ok && res.status !== 204) {
       showMsg(supplierMsg, await parseError(res), false);
       return;
@@ -254,7 +265,7 @@
     queryBtn.disabled = true;
     try {
       const qs = params.toString();
-      const res = await fetch(`/api/orders${qs ? `?${qs}` : ""}`);
+      const res = await api(`/api/orders${qs ? `?${qs}` : ""}`);
       if (!res.ok) throw new Error(await parseError(res));
       renderOrders(await res.json());
     } catch (err) {
@@ -275,7 +286,7 @@
     });
     if (!confirmed) return;
     try {
-      const res = await fetch(`/api/orders/${id}`, { method: "DELETE" });
+      const res = await api(`/api/orders/${id}`, { method: "DELETE" });
       if (!res.ok && res.status !== 204) throw new Error(await parseError(res));
       showMsg(queryMsg, "已删除", true);
       await queryOrders();
@@ -285,7 +296,7 @@
   }
 
   async function findExistingOrder(payload) {
-    const res = await fetch(
+    const res = await api(
       `/api/orders?order_date=${encodeURIComponent(payload.order_date)}`
     );
     if (!res.ok) return null;
@@ -301,7 +312,7 @@
   }
 
   async function createOrder(payload) {
-    const res = await fetch("/api/orders", {
+    const res = await api("/api/orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -387,7 +398,7 @@
       showMsg(shopMsg, "请输入店铺名", false);
       return;
     }
-    const res = await fetch("/api/shops", {
+    const res = await api("/api/shops", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name }),
@@ -409,7 +420,7 @@
       showMsg(supplierMsg, "请输入供应商名", false);
       return;
     }
-    const res = await fetch("/api/suppliers", {
+    const res = await api("/api/suppliers", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name }),
@@ -435,7 +446,23 @@
     queryOrders();
   });
 
+  logoutBtn.addEventListener("click", async () => {
+    await api("/api/auth/logout", { method: "POST" });
+    location.href = "/login";
+  });
+
   orderDate.value = todayISO();
   queryDate.value = todayISO();
-  loadCatalog().catch((err) => showMsg(formMsg, err.message || "加载店铺/供应商失败", false));
+
+  (async () => {
+    const meRes = await api("/api/auth/me");
+    if (!meRes.ok) return;
+    const me = await meRes.json();
+    currentUser.textContent = me.username;
+    await loadCatalog();
+  })().catch((err) => {
+    if (err.message !== "未登录") {
+      showMsg(formMsg, err.message || "加载失败", false);
+    }
+  });
 })();

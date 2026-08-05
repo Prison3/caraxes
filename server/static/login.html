@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>登录 · 供应商订单</title>
+  <link rel="stylesheet" href="/static/style.css?v=5" />
+</head>
+<body class="login-body">
+  <main class="login-shell">
+    <h1>供应商订单</h1>
+    <p class="login-sub">登录后录入与查询每日订单</p>
+    <form id="loginForm" class="login-form" autocomplete="on">
+      <label>
+        用户名
+        <input type="text" id="username" name="username" autocomplete="username" required autofocus />
+      </label>
+      <label>
+        密码
+        <input type="password" id="password" name="password" autocomplete="current-password" required />
+      </label>
+      <button type="submit" id="loginBtn">登录</button>
+    </form>
+    <p id="loginMsg" class="msg" hidden></p>
+  </main>
+  <script src="/static/login.js?v=5"></script>
+</body>
+</html>

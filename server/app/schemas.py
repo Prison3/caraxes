@@ -38,6 +38,18 @@ class OrderOut(BaseModel):
     updated_at: datetime
 
 
+class LoginIn(BaseModel):
+    username: str = Field(..., min_length=1, max_length=64, description="用户名")
+    password: str = Field(..., min_length=1, max_length=128, description="密码")
+
+
+class UserOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    username: str
+
+
 class NameCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=200, description="名称")
 

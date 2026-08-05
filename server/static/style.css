@@ -421,3 +421,93 @@ button[type="submit"],
   cursor: pointer;
   padding: 0.25rem 0.4rem;
 }
+
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.topbar-user .uname {
+  opacity: 0.9;
+}
+
+.topbar-user .logout-btn {
+  height: 34px;
+  padding: 0 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 8px;
+  background: transparent;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.topbar-user .logout-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.login-body {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem 1rem;
+  background:
+    radial-gradient(ellipse 90% 60% at 80% 0%, rgba(27, 77, 62, 0.18), transparent),
+    radial-gradient(ellipse 70% 50% at 0% 100%, rgba(27, 77, 62, 0.1), transparent),
+    linear-gradient(165deg, #e4ddd2 0%, var(--cream) 45%, #f0ebe3 100%);
+}
+
+.login-shell {
+  width: min(100%, 380px);
+  padding: 2rem 1.5rem 1.75rem;
+}
+
+.login-shell h1 {
+  margin: 0;
+  font-size: clamp(1.85rem, 5vw, 2.25rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--forest);
+  text-align: center;
+}
+
+.login-sub {
+  margin: 0.55rem 0 1.75rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.login-form {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.login-form button[type="submit"] {
+  margin-top: 0.35rem;
+  height: 48px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--forest);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.login-form button[type="submit"]:hover:not(:disabled) {
+  background: var(--forest-hover);
+}
+
+.login-form button[type="submit"]:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.login-shell .msg {
+  margin-top: 1rem;
+  text-align: center;
+}
