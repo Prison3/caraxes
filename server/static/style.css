@@ -35,9 +35,11 @@ body {
 
 .topbar h1 {
   margin: 0;
-  font-size: 1.15rem;
+  font-size: clamp(0.95rem, 3.5vw, 1.15rem);
   font-weight: 600;
   letter-spacing: 0.02em;
+  line-height: 1.25;
+  max-width: min(70vw, 22rem);
 }
 
 .wrap {

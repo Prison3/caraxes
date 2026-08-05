@@ -19,8 +19,8 @@ seed_catalog()
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 
 app = FastAPI(
-    title="供应商每日订单 API",
-    description="Web / Android 上报每日供应商订单数据",
+    title="供应商管理系统 API",
+    description="供应商管理系统：Web / Android 上报每日供应商订单数据",
     version="0.1.0",
 )
 
