@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>供应商订单</title>
-  <link rel="stylesheet" href="/static/style.css?v=6" />
+  <link rel="stylesheet" href="/static/style.css?v=9" />
 </head>
 <body>
   <header class="topbar">
@@ -74,9 +74,42 @@
     <section id="panelQuery" class="panel tab-panel" role="tabpanel" hidden>
       <h2>查询订单</h2>
       <form id="queryForm" class="query-form">
-        <label>
+        <label class="date-field-label">
           日期
-          <input type="date" id="queryDate" />
+          <div class="date-field">
+            <input
+              type="text"
+              id="queryDate"
+              placeholder="点日历选择，或输入 2026-08-06 / 2026-08 / 08-01~08-31"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <button type="button" id="queryDateCalBtn" class="date-cal-btn" aria-label="打开日历" title="日历选择">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/>
+                <path d="M3 10h18" fill="none" stroke="currentColor" stroke-width="1.8"/>
+                <path d="M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+          <div id="queryCal" class="cal-pop" hidden>
+            <div class="cal-modes" role="tablist">
+              <button type="button" class="cal-mode active" data-mode="day">单日</button>
+              <button type="button" class="cal-mode" data-mode="range">时段</button>
+              <button type="button" class="cal-mode" data-mode="month">月份</button>
+            </div>
+            <div class="cal-nav">
+              <button type="button" id="calPrev" aria-label="上一段">‹</button>
+              <span id="calTitle" class="cal-title"></span>
+              <button type="button" id="calNext" aria-label="下一段">›</button>
+            </div>
+            <div id="calHint" class="cal-hint">选择一天</div>
+            <div id="calBody" class="cal-body"></div>
+            <div class="cal-footer">
+              <button type="button" id="calToday" class="btn-secondary">今天</button>
+              <button type="button" id="calClear" class="btn-secondary">清空</button>
+            </div>
+          </div>
         </label>
         <label>
           店铺名
@@ -150,6 +183,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=6"></script>
+  <script src="/static/app.js?v=9"></script>
 </body>
 </html>

@@ -9,11 +9,25 @@
 
   const queryForm = document.getElementById("queryForm");
   const queryDate = document.getElementById("queryDate");
+  const queryDateCalBtn = document.getElementById("queryDateCalBtn");
+  const queryCal = document.getElementById("queryCal");
+  const calTitle = document.getElementById("calTitle");
+  const calHint = document.getElementById("calHint");
+  const calBody = document.getElementById("calBody");
+  const calPrev = document.getElementById("calPrev");
+  const calNext = document.getElementById("calNext");
+  const calToday = document.getElementById("calToday");
+  const calClear = document.getElementById("calClear");
   const queryShop = document.getElementById("queryShop");
   const querySupplier = document.getElementById("querySupplier");
   const queryBtn = document.getElementById("queryBtn");
   const resetQueryBtn = document.getElementById("resetQueryBtn");
   const queryMsg = document.getElementById("queryMsg");
+
+  const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
+  let calMode = "day";
+  let calCursor = new Date();
+  let rangeAnchor = null;
 
   const orderList = document.getElementById("orderList");
   const resultTableWrap = document.getElementById("resultTableWrap");
@@ -67,6 +81,188 @@
     const m = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
     return `${y}-${m}-${day}`;
+  }
+
+  function pad2(n) {
+    return String(n).padStart(2, "0");
+  }
+
+  function toISODate(d) {
+    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  }
+
+  function parseQueryDateInput(raw) {
+    const s = String(raw || "").trim().replace(/\s+/g, "");
+    if (!s) return { ok: true, params: {} };
+
+    const range = s.match(
+      /^(\d{4}-\d{2}-\d{2})(?:[~～/至]|--)(\d{4}-\d{2}-\d{2})$/
+    );
+    if (range) {
+      const [, from, to] = range;
+      if (from > to) return { ok: false, error: "开始日期不能晚于结束日期" };
+      return { ok: true, params: { date_from: from, date_to: to } };
+    }
+
+    // 同月简写：2026-08-01~08-31
+    const shortRange = s.match(/^(\d{4}-\d{2})-(\d{2})(?:[~～/至]|--)(\d{2})$/);
+    if (shortRange) {
+      const [, ym, d1, d2] = shortRange;
+      const from = `${ym}-${d1}`;
+      const to = `${ym}-${d2}`;
+      if (from > to) return { ok: false, error: "开始日期不能晚于结束日期" };
+      return { ok: true, params: { date_from: from, date_to: to } };
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      return { ok: true, params: { order_date: s } };
+    }
+    if (/^\d{4}-(0[1-9]|1[0-2])$/.test(s)) {
+      return { ok: true, params: { month: s } };
+    }
+    return {
+      ok: false,
+      error: "日期格式：2026-08-06、2026-08 或 2026-08-01~2026-08-31",
+    };
+  }
+
+  function getSelectedRange() {
+    const parsed = parseQueryDateInput(queryDate.value);
+    if (!parsed.ok) return { mode: calMode, from: null, to: null, month: null };
+    const { params } = parsed;
+    if (params.month) return { mode: "month", from: null, to: null, month: params.month };
+    if (params.date_from || params.date_to) {
+      return {
+        mode: "range",
+        from: params.date_from || null,
+        to: params.date_to || null,
+        month: null,
+      };
+    }
+    if (params.order_date) {
+      return { mode: "day", from: params.order_date, to: params.order_date, month: null };
+    }
+    return { mode: calMode, from: null, to: null, month: null };
+  }
+
+  function setCalOpen(open) {
+    queryCal.hidden = !open;
+    queryDateCalBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    if (open) renderCalendar();
+  }
+
+  function renderCalendar() {
+    const selected = getSelectedRange();
+    const y = calCursor.getFullYear();
+    const m = calCursor.getMonth();
+    const today = todayISO();
+
+    queryCal.querySelectorAll(".cal-mode").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.mode === calMode);
+    });
+
+    if (calMode === "month") {
+      calTitle.textContent = `${y} 年`;
+      calHint.textContent = "选择月份";
+      const months = document.createElement("div");
+      months.className = "cal-months";
+      for (let i = 0; i < 12; i += 1) {
+        const value = `${y}-${pad2(i + 1)}`;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "cal-month-cell";
+        btn.textContent = `${i + 1}月`;
+        if (value === today.slice(0, 7)) btn.classList.add("today");
+        if (selected.month === value) btn.classList.add("selected");
+        btn.addEventListener("click", () => {
+          queryDate.value = value;
+          rangeAnchor = null;
+          setCalOpen(false);
+          queryOrders();
+        });
+        months.appendChild(btn);
+      }
+      calBody.replaceChildren(months);
+      return;
+    }
+
+    calTitle.textContent = `${y} 年 ${m + 1} 月`;
+    calHint.textContent =
+      calMode === "range"
+        ? rangeAnchor
+          ? `已选 ${rangeAnchor}，再选结束日`
+          : "先选开始日，再选结束日"
+        : "选择一天";
+
+    const weekdays = document.createElement("div");
+    weekdays.className = "cal-weekdays";
+    WEEKDAYS.forEach((w) => {
+      const span = document.createElement("span");
+      span.textContent = w;
+      weekdays.appendChild(span);
+    });
+
+    const days = document.createElement("div");
+    days.className = "cal-days";
+    const first = new Date(y, m, 1);
+    const startWeekday = first.getDay();
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+    const from = selected.from;
+    const to = selected.to;
+
+    for (let i = 0; i < startWeekday; i += 1) {
+      const empty = document.createElement("button");
+      empty.type = "button";
+      empty.className = "cal-day";
+      empty.disabled = true;
+      empty.textContent = "";
+      days.appendChild(empty);
+    }
+
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      const value = `${y}-${pad2(m + 1)}-${pad2(day)}`;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "cal-day";
+      btn.textContent = String(day);
+      if (value === today) btn.classList.add("today");
+      if (calMode === "day" && from === value) btn.classList.add("selected");
+      if (calMode === "range") {
+        if (from && to && value >= from && value <= to) btn.classList.add("in-range");
+        if (from === value) btn.classList.add("range-start");
+        if (to === value) btn.classList.add("range-end");
+        if (rangeAnchor === value) btn.classList.add("selected");
+      }
+      btn.addEventListener("click", () => onCalDayClick(value));
+      days.appendChild(btn);
+    }
+
+    calBody.replaceChildren(weekdays, days);
+  }
+
+  function onCalDayClick(value) {
+    if (calMode === "day") {
+      queryDate.value = value;
+      rangeAnchor = null;
+      setCalOpen(false);
+      queryOrders();
+      return;
+    }
+
+    if (!rangeAnchor) {
+      rangeAnchor = value;
+      queryDate.value = value;
+      renderCalendar();
+      return;
+    }
+
+    let from = rangeAnchor;
+    let to = value;
+    if (from > to) [from, to] = [to, from];
+    queryDate.value = `${from}~${to}`;
+    rangeAnchor = null;
+    setCalOpen(false);
+    queryOrders();
   }
 
   function showMsg(el, text, ok) {
@@ -298,8 +494,16 @@
 
   async function queryOrders() {
     hideMsg(queryMsg);
+    const parsed = parseQueryDateInput(queryDate.value);
+    if (!parsed.ok) {
+      showMsg(queryMsg, parsed.error, false);
+      return;
+    }
+
     const params = new URLSearchParams();
-    if (queryDate.value) params.set("order_date", queryDate.value);
+    Object.entries(parsed.params).forEach(([key, value]) => {
+      params.set(key, value);
+    });
     if (queryShop.value) params.set("shop_name", queryShop.value);
     if (querySupplier.value) params.set("supplier_name", querySupplier.value);
 
@@ -482,10 +686,89 @@
     queryOrders();
   });
 
+  queryDateCalBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const willOpen = queryCal.hidden;
+    if (willOpen) {
+      const selected = getSelectedRange();
+      if (selected.mode) calMode = selected.mode;
+      if (selected.month) {
+        const [yy, mm] = selected.month.split("-").map(Number);
+        calCursor = new Date(yy, mm - 1, 1);
+      } else if (selected.from) {
+        const [yy, mm] = selected.from.split("-").map(Number);
+        calCursor = new Date(yy, mm - 1, 1);
+      } else {
+        calCursor = new Date();
+      }
+      rangeAnchor = null;
+    }
+    setCalOpen(willOpen);
+  });
+
+  queryCal.addEventListener("click", (e) => e.stopPropagation());
+
+  queryCal.querySelectorAll(".cal-mode").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      calMode = btn.dataset.mode;
+      rangeAnchor = null;
+      renderCalendar();
+    });
+  });
+
+  calPrev.addEventListener("click", () => {
+    if (calMode === "month") {
+      calCursor = new Date(calCursor.getFullYear() - 1, 0, 1);
+    } else {
+      calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() - 1, 1);
+    }
+    renderCalendar();
+  });
+
+  calNext.addEventListener("click", () => {
+    if (calMode === "month") {
+      calCursor = new Date(calCursor.getFullYear() + 1, 0, 1);
+    } else {
+      calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() + 1, 1);
+    }
+    renderCalendar();
+  });
+
+  calToday.addEventListener("click", () => {
+    const today = todayISO();
+    calCursor = new Date();
+    rangeAnchor = null;
+    if (calMode === "month") {
+      queryDate.value = today.slice(0, 7);
+    } else {
+      calMode = "day";
+      queryDate.value = today;
+    }
+    setCalOpen(false);
+    queryOrders();
+  });
+
+  calClear.addEventListener("click", () => {
+    queryDate.value = "";
+    rangeAnchor = null;
+    setCalOpen(false);
+    queryOrders();
+  });
+
+  document.addEventListener("click", () => {
+    if (!queryCal.hidden) setCalOpen(false);
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !queryCal.hidden) setCalOpen(false);
+  });
+
   resetQueryBtn.addEventListener("click", () => {
     queryDate.value = todayISO();
     queryShop.value = "";
     querySupplier.value = "";
+    rangeAnchor = null;
+    setCalOpen(false);
     queryOrders();
   });
 

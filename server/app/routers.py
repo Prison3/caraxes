@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import calendar
+import re
 from datetime import date
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.exc import IntegrityError
@@ -12,6 +14,15 @@ from .models import SupplierOrder
 from .schemas import OrderCreate, OrderOut, OrderUpdate
 
 router = APIRouter(prefix="/api/orders", tags=["orders"])
+
+_MONTH_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
+
+
+def _month_bounds(month: str) -> Tuple[date, date]:
+    year, mon = map(int, month.split("-"))
+    start = date(year, mon, 1)
+    end = date(year, mon, calendar.monthrange(year, mon)[1])
+    return start, end
 
 
 def _strip_fields(data: dict) -> dict:
@@ -44,7 +55,12 @@ def create_order(payload: OrderCreate, db: Session = Depends(get_db)):
 
 @router.get("", response_model=List[OrderOut])
 def list_orders(
-    order_date: Optional[date] = Query(None, description="按日期筛选"),
+    order_date: Optional[date] = Query(None, description="按单日筛选"),
+    date_from: Optional[date] = Query(None, description="起始日期（含）"),
+    date_to: Optional[date] = Query(None, description="结束日期（含）"),
+    month: Optional[str] = Query(
+        None, description="按月份筛选，格式 YYYY-MM，例如 2026-08"
+    ),
     shop_name: Optional[str] = Query(None, description="按店铺名筛选（模糊）"),
     supplier_name: Optional[str] = Query(None, description="按供应商名筛选（模糊）"),
     limit: Optional[int] = Query(
@@ -53,8 +69,31 @@ def list_orders(
     db: Session = Depends(get_db),
 ):
     query = db.query(SupplierOrder)
-    if order_date is not None:
+
+    if month is not None:
+        if not _MONTH_RE.match(month):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="month 格式应为 YYYY-MM",
+            )
+        start, end = _month_bounds(month)
+        query = query.filter(
+            SupplierOrder.order_date >= start,
+            SupplierOrder.order_date <= end,
+        )
+    elif date_from is not None or date_to is not None:
+        if date_from is not None and date_to is not None and date_from > date_to:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="起始日期不能晚于结束日期",
+            )
+        if date_from is not None:
+            query = query.filter(SupplierOrder.order_date >= date_from)
+        if date_to is not None:
+            query = query.filter(SupplierOrder.order_date <= date_to)
+    elif order_date is not None:
         query = query.filter(SupplierOrder.order_date == order_date)
+
     if shop_name:
         query = query.filter(SupplierOrder.shop_name.contains(shop_name.strip()))
     if supplier_name:
