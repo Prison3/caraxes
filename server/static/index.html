@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>供应商订单</title>
+  <link rel="stylesheet" href="/static/style.css?v=4" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>供应商订单</h1>
+  </header>
+
+  <main class="wrap">
+    <nav class="tabs tabs-3" role="tablist">
+      <button type="button" class="tab active" data-tab="create" role="tab" aria-selected="true">录入</button>
+      <button type="button" class="tab" data-tab="query" role="tab" aria-selected="false">查询</button>
+      <button type="button" class="tab" data-tab="manage" role="tab" aria-selected="false">管理</button>
+    </nav>
+
+    <section id="panelCreate" class="panel tab-panel active" role="tabpanel">
+      <h2>录入订单</h2>
+      <form id="orderForm">
+        <label>
+          日期
+          <input type="date" id="orderDate" name="order_date" required />
+        </label>
+        <label>
+          店铺名
+          <select id="shopName" name="shop_name" required>
+            <option value="" disabled selected>请选择店铺</option>
+          </select>
+        </label>
+        <label>
+          供应商名
+          <select id="supplierName" name="supplier_name" required>
+            <option value="" disabled selected>请选择供应商</option>
+          </select>
+        </label>
+        <label>
+          单日总金额
+          <input type="number" id="dailyTotal" name="daily_total" placeholder="例如：1280.50" min="0.01" step="0.01" required />
+        </label>
+        <button type="submit" id="submitBtn">提交到服务端</button>
+      </form>
+      <p id="formMsg" class="msg" hidden></p>
+    </section>
+
+    <section id="panelQuery" class="panel tab-panel" role="tabpanel" hidden>
+      <h2>查询订单</h2>
+      <form id="queryForm" class="query-form">
+        <label>
+          日期
+          <input type="date" id="queryDate" />
+        </label>
+        <label>
+          店铺名
+          <select id="queryShop">
+            <option value="">全部店铺</option>
+          </select>
+        </label>
+        <label>
+          供应商名
+          <select id="querySupplier">
+            <option value="">全部供应商</option>
+          </select>
+        </label>
+        <div class="query-actions">
+          <button type="submit" id="queryBtn">查询</button>
+          <button type="button" id="resetQueryBtn" class="btn-secondary">重置</button>
+        </div>
+      </form>
+      <p id="queryMsg" class="msg" hidden></p>
+
+      <div class="list-head">
+        <h3>查询结果</h3>
+        <span id="listMeta" class="meta"></span>
+      </div>
+      <p id="sumMeta" class="sum-meta" hidden></p>
+      <div id="resultTableWrap" class="result-table-wrap" hidden>
+        <table class="result-table" id="resultTable">
+          <thead>
+            <tr>
+              <th>日期</th>
+              <th>店铺</th>
+              <th>供应商</th>
+              <th class="num">金额</th>
+              <th class="ops">操作</th>
+            </tr>
+          </thead>
+          <tbody id="orderList"></tbody>
+        </table>
+      </div>
+      <p id="emptyHint" class="empty">暂无订单，请调整条件后查询</p>
+    </section>
+
+    <section id="panelManage" class="panel tab-panel" role="tabpanel" hidden>
+      <h2>添加店铺</h2>
+      <form id="shopForm" class="inline-form">
+        <input type="text" id="newShopName" placeholder="店铺名称" maxlength="200" required />
+        <button type="submit">添加店铺</button>
+      </form>
+      <p id="shopMsg" class="msg" hidden></p>
+      <ul id="shopManageList" class="manage-list"></ul>
+
+      <h2 class="section-gap">添加供应商</h2>
+      <form id="supplierForm" class="inline-form">
+        <input type="text" id="newSupplierName" placeholder="供应商名称" maxlength="200" required />
+        <button type="submit">添加供应商</button>
+      </form>
+      <p id="supplierMsg" class="msg" hidden></p>
+      <ul id="supplierManageList" class="manage-list"></ul>
+    </section>
+  </main>
+
+  <div id="dupModal" class="modal" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="dupTitle">
+      <h3 id="dupTitle">是否重复</h3>
+      <p id="dupText">订单信息一模一样，是否重复？</p>
+      <div class="modal-actions">
+        <button type="button" id="dupYes" class="btn-danger">是，取消提交</button>
+        <button type="button" id="dupNo" class="btn-secondary">否，继续提交</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js?v=4"></script>
+</body>
+</html>

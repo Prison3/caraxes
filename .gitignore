@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# 数据库
+server/data/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Android (预留)
+*.apk
+*.aab
+local.properties
+.gradle/
+**/build/
