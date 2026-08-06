@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>登录 · 供应商管理系统</title>
-  <link rel="stylesheet" href="/static/style.css?v=10" />
+  <link rel="stylesheet" href="/static/style.css?v=12" />
 </head>
 <body class="login-body">
   <main class="login-shell">
@@ -17,12 +17,29 @@
       </label>
       <label>
         密码
-        <input type="password" id="password" name="password" autocomplete="current-password" required />
+        <span class="password-field">
+          <input type="password" id="password" name="password" autocomplete="current-password" required />
+          <button
+            type="button"
+            id="togglePassword"
+            class="password-toggle"
+            aria-label="显示密码"
+            aria-pressed="false"
+            title="显示密码"
+          >
+            <svg class="icon-wifi" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <!-- 3 层 WiFi：外 / 中 / 内 -->
+              <path d="M1.5 8.6a15.4 15.4 0 0 1 21 0l-1.7 1.9a12.8 12.8 0 0 0-17.6 0L1.5 8.6z" />
+              <path d="M5.1 12.6a10.2 10.2 0 0 1 13.8 0l-1.8 1.9a7.6 7.6 0 0 0-10.2 0l-1.8-1.9z" />
+              <path d="M8.7 16.5a5 5 0 0 1 6.6 0L12 20l-3.3-3.5z" />
+            </svg>
+          </button>
+        </span>
       </label>
       <button type="submit" id="loginBtn">登录</button>
     </form>
     <p id="loginMsg" class="msg" hidden></p>
   </main>
-  <script src="/static/login.js?v=5"></script>
+  <script src="/static/login.js?v=7"></script>
 </body>
 </html>

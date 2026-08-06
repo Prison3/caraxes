@@ -206,13 +206,13 @@ button[type="submit"],
 }
 
 .meta {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: var(--muted);
 }
 
 .sum-meta {
   margin: 0.55rem 0 0;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--forest);
 }
@@ -228,20 +228,20 @@ button[type="submit"],
 .result-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  font-size: 0.78rem;
   min-width: 480px;
 }
 
 .result-table th,
 .result-table td {
-  padding: 0.7rem 0.75rem;
+  padding: 0.45rem 0.5rem;
   text-align: left;
   border-bottom: 1px solid var(--line);
   vertical-align: middle;
 }
 
 .result-table th {
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   font-weight: 600;
   color: var(--muted);
   background: rgba(27, 77, 62, 0.06);
@@ -262,6 +262,13 @@ button[type="submit"],
   white-space: nowrap;
 }
 
+.result-table .col-no,
+.result-table .col-date {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.72rem;
+}
+
 .result-table .ops {
   text-align: center;
   width: 4.5rem;
@@ -271,9 +278,9 @@ button[type="submit"],
   border: 0;
   background: transparent;
   color: var(--danger);
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   cursor: pointer;
-  padding: 0.35rem 0.5rem;
+  padding: 0.2rem 0.35rem;
   white-space: nowrap;
 }
 
@@ -354,6 +361,15 @@ button[type="submit"],
 .btn-danger {
   background: var(--danger);
   color: #fff;
+}
+
+.btn-primary {
+  background: var(--forest);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--forest-hover);
 }
 
 .section-gap {
@@ -486,6 +502,48 @@ button[type="submit"],
 .login-form {
   display: grid;
   gap: 0.9rem;
+}
+
+.password-field {
+  position: relative;
+  display: block;
+}
+
+.password-field input {
+  padding-right: 2.75rem;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.35rem;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+}
+
+.password-toggle:hover {
+  color: var(--forest);
+  background: rgba(27, 77, 62, 0.08);
+}
+
+.password-toggle[aria-pressed="true"] {
+  color: var(--forest);
+}
+
+.password-toggle .icon-wifi {
+  width: 1.3rem;
+  height: 1.3rem;
+  display: block;
+  fill: currentColor;
 }
 
 .login-form button[type="submit"] {
@@ -723,4 +781,16 @@ button[type="submit"],
 .recent-block .list-head {
   margin-top: 0;
   padding-top: 1rem;
+}
+
+.recent-block .list-head h3 {
+  font-size: 0.9rem;
+}
+
+.recent-block .result-table {
+  min-width: 0;
+}
+
+.recent-block .empty {
+  font-size: 0.8rem;
 }

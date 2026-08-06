@@ -73,6 +73,7 @@ class Supplier:
 @dataclass
 class SupplierOrder:
     id: int
+    order_no: str
     order_date: date
     shop_name: str
     supplier_name: str
@@ -82,9 +83,20 @@ class SupplierOrder:
 
     @classmethod
     def from_doc(cls, doc: Mapping[str, Any]) -> "SupplierOrder":
+        order_date = parse_order_date(doc["order_date"])
+        order_id = int(doc["_id"])
+        order_no = doc.get("order_no")
+        if not order_no:
+            created = doc.get("created_at")
+            if isinstance(created, datetime):
+                order_no = created.astimezone().strftime("%Y%m%d%H%M%S")
+            else:
+                order_no = f"{order_date.strftime('%Y%m%d')}000000"
+            order_no = f"{order_no}-{order_id:02d}"
         return cls(
-            id=int(doc["_id"]),
-            order_date=parse_order_date(doc["order_date"]),
+            id=order_id,
+            order_no=str(order_no),
+            order_date=order_date,
             shop_name=doc["shop_name"],
             supplier_name=doc["supplier_name"],
             daily_total=float(doc["daily_total"]),
@@ -96,6 +108,7 @@ class SupplierOrder:
 def build_order_doc(
     *,
     order_id: int,
+    order_no: str,
     order_date: date,
     shop_name: str,
     supplier_name: str,
@@ -106,6 +119,7 @@ def build_order_doc(
     now = utcnow()
     return {
         "_id": order_id,
+        "order_no": order_no,
         "order_date": serialize_order_date(order_date),
         "shop_name": shop_name,
         "supplier_name": supplier_name,

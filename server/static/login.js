@@ -2,8 +2,17 @@
   const form = document.getElementById("loginForm");
   const username = document.getElementById("username");
   const password = document.getElementById("password");
+  const togglePassword = document.getElementById("togglePassword");
   const loginBtn = document.getElementById("loginBtn");
   const loginMsg = document.getElementById("loginMsg");
+
+  togglePassword.addEventListener("click", () => {
+    const show = password.type === "password";
+    password.type = show ? "text" : "password";
+    togglePassword.setAttribute("aria-pressed", show ? "true" : "false");
+    togglePassword.setAttribute("aria-label", show ? "隐藏密码" : "显示密码");
+    togglePassword.title = show ? "隐藏密码" : "显示密码";
+  });
 
   function showMsg(text, ok) {
     loginMsg.hidden = false;

@@ -284,11 +284,13 @@
     return Math.abs(Number(a) - Number(b)) < 0.001;
   }
 
-  function openModal({ title, text, yesText, noText }) {
+  function openModal({ title, text, yesText, noText, danger = false }) {
     dupTitle.textContent = title;
     dupText.textContent = text;
     dupYes.textContent = yesText;
     dupNo.textContent = noText;
+    dupYes.className = danger ? "btn-danger" : "btn-primary";
+    dupNo.className = "btn-secondary";
     dupModal.hidden = false;
     return new Promise((resolve) => {
       dupResolve = resolve;
@@ -377,6 +379,7 @@
       text: `确认删除店铺「${item.name}」？`,
       yesText: "确定删除",
       noText: "取消",
+      danger: true,
     });
     if (!ok) return;
     const res = await api(`/api/shops/${item.id}`, { method: "DELETE" });
@@ -394,6 +397,7 @@
       text: `确认删除供应商「${item.name}」？`,
       yesText: "确定删除",
       noText: "取消",
+      danger: true,
     });
     if (!ok) return;
     const res = await api(`/api/suppliers/${item.id}`, { method: "DELETE" });
@@ -430,22 +434,28 @@
     for (const order of orders) {
       const tr = document.createElement("tr");
       tr.innerHTML = `
+        <td class="col-no"></td>
         <td class="col-date"></td>
         <td class="col-shop"></td>
         <td class="col-supplier"></td>
         <td class="num col-amount"></td>
+        <td class="ops"><button type="button" class="delete-btn">删除</button></td>
       `;
+      tr.querySelector(".col-no").textContent = order.order_no || order.id;
       tr.querySelector(".col-date").textContent = order.order_date;
       tr.querySelector(".col-shop").textContent = order.shop_name;
       tr.querySelector(".col-supplier").textContent = order.supplier_name;
       tr.querySelector(".col-amount").textContent = `¥${formatMoney(order.daily_total)}`;
+      tr.querySelector(".delete-btn").addEventListener("click", () => {
+        deleteOrder(order.id);
+      });
       recentList.appendChild(tr);
     }
   }
 
   async function loadRecentOrders() {
     try {
-      const res = await api("/api/orders?limit=5");
+      const res = await api("/api/orders?limit=10");
       if (!res.ok) throw new Error(await parseError(res));
       renderRecentOrders(await res.json());
     } catch (err) {
@@ -475,12 +485,14 @@
     for (const order of orders) {
       const tr = document.createElement("tr");
       tr.innerHTML = `
+        <td class="col-no"></td>
         <td class="col-date"></td>
         <td class="col-shop"></td>
         <td class="col-supplier"></td>
         <td class="num col-amount"></td>
         <td class="ops"><button type="button" class="delete-btn">删除</button></td>
       `;
+      tr.querySelector(".col-no").textContent = order.order_no || order.id;
       tr.querySelector(".col-date").textContent = order.order_date;
       tr.querySelector(".col-shop").textContent = order.shop_name;
       tr.querySelector(".col-supplier").textContent = order.supplier_name;
@@ -529,15 +541,18 @@
       text: "确认删除这条订单？",
       yesText: "确定删除",
       noText: "取消",
+      danger: true,
     });
     if (!confirmed) return;
+    const msgEl = panelCreate.hidden ? queryMsg : formMsg;
     try {
       const res = await api(`/api/orders/${id}`, { method: "DELETE" });
       if (!res.ok && res.status !== 204) throw new Error(await parseError(res));
-      showMsg(queryMsg, "已删除", true);
-      await queryOrders();
+      showMsg(msgEl, "已删除", true);
+      await loadRecentOrders();
+      if (!panelQuery.hidden) await queryOrders();
     } catch (err) {
-      showMsg(queryMsg, err.message || "删除失败", false);
+      showMsg(msgEl, err.message || "删除失败", false);
     }
   }
 
@@ -547,12 +562,14 @@
     );
     if (!res.ok) return null;
     const orders = await res.json();
+    // 仅日期+店铺+供应商+金额完全一致才算重复
     return (
       orders.find(
         (o) =>
           o.order_date === payload.order_date &&
           o.shop_name === payload.shop_name &&
-          o.supplier_name === payload.supplier_name
+          o.supplier_name === payload.supplier_name &&
+          almostEqual(o.daily_total, payload.daily_total)
       ) || null
     );
   }
@@ -563,19 +580,6 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    if (res.status === 409) {
-      const isDup = await openModal({
-        title: "是否重复",
-        text: "订单信息已存在，是否重复？",
-        yesText: "是，取消提交",
-        noText: "否",
-      });
-      if (isDup) {
-        showMsg(formMsg, "已取消提交（判定为重复）", false);
-        return false;
-      }
-      throw new Error(await parseError(res));
-    }
     if (!res.ok) throw new Error(await parseError(res));
     return true;
   }
@@ -608,17 +612,13 @@
     try {
       const existing = await findExistingOrder(payload);
       if (existing) {
-        const sameAmount = almostEqual(existing.daily_total, payload.daily_total);
-        const text = sameAmount
-          ? "订单信息一模一样，是否重复？"
-          : `该店铺该日该供应商已有订单（金额 ¥${formatMoney(existing.daily_total)}），是否重复？`;
-        const isDup = await openModal({
-          title: "是否重复",
-          text,
-          yesText: "是，取消提交",
-          noText: "否，继续提交",
+        const shouldSubmit = await openModal({
+          title: "是否提交",
+          text: "订单信息可能重复，是否继续提交",
+          yesText: "是",
+          noText: "否",
         });
-        if (isDup) {
+        if (!shouldSubmit) {
           showMsg(formMsg, "已取消提交（判定为重复）", false);
           return;
         }

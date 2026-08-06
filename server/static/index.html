@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>供应商管理系统</title>
-  <link rel="stylesheet" href="/static/style.css?v=10" />
+  <link rel="stylesheet" href="/static/style.css?v=20260806h" />
 </head>
 <body>
   <header class="topbar">
@@ -58,10 +58,12 @@
           <table class="result-table" id="recentTable">
             <thead>
               <tr>
+                <th>订单编号</th>
                 <th>日期</th>
                 <th>店铺</th>
                 <th>供应商</th>
                 <th class="num">金额</th>
+                <th class="ops">操作</th>
               </tr>
             </thead>
             <tbody id="recentList"></tbody>
@@ -139,6 +141,7 @@
         <table class="result-table" id="resultTable">
           <thead>
             <tr>
+              <th>订单编号</th>
               <th>日期</th>
               <th>店铺</th>
               <th>供应商</th>
@@ -174,15 +177,15 @@
   <div id="dupModal" class="modal" hidden>
     <div class="modal-backdrop"></div>
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="dupTitle">
-      <h3 id="dupTitle">是否重复</h3>
-      <p id="dupText">订单信息一模一样，是否重复？</p>
+      <h3 id="dupTitle">是否提交</h3>
+      <p id="dupText">订单信息可能重复，是否继续提交</p>
       <div class="modal-actions">
-        <button type="button" id="dupYes" class="btn-danger">是，取消提交</button>
-        <button type="button" id="dupNo" class="btn-secondary">否，继续提交</button>
+        <button type="button" id="dupYes">是</button>
+        <button type="button" id="dupNo" class="btn-secondary">否</button>
       </div>
     </div>
   </div>
 
-  <script src="/static/app.js?v=10"></script>
+  <script src="/static/app.js?v=20260806g"></script>
 </body>
 </html>

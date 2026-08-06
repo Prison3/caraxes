@@ -49,14 +49,24 @@ app.include_router(suppliers_router, dependencies=_auth)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
+def _html_response(name: str) -> FileResponse:
+    return FileResponse(
+        STATIC_DIR / name,
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate",
+            "Pragma": "no-cache",
+        },
+    )
+
+
 @app.get("/")
 def index():
-    return FileResponse(STATIC_DIR / "index.html")
+    return _html_response("index.html")
 
 
 @app.get("/login")
 def login_page():
-    return FileResponse(STATIC_DIR / "login.html")
+    return _html_response("login.html")
 
 
 @app.get("/health")

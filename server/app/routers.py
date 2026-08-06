@@ -8,9 +8,8 @@ from typing import List, Optional, Tuple
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pymongo import ReturnDocument
 from pymongo.database import Database
-from pymongo.errors import DuplicateKeyError
 
-from .database import get_db, next_id
+from .database import get_db, next_id, next_order_no
 from .models import SupplierOrder, build_order_doc, serialize_order_date, utcnow
 from .schemas import OrderCreate, OrderOut, OrderUpdate
 
@@ -37,18 +36,13 @@ def _strip_fields(data: dict) -> dict:
 def create_order(payload: OrderCreate, db: Database = Depends(get_db)):
     doc = build_order_doc(
         order_id=next_id(db, "supplier_orders"),
+        order_no=next_order_no(db, payload.order_date),
         order_date=payload.order_date,
         shop_name=payload.shop_name.strip(),
         supplier_name=payload.supplier_name.strip(),
         daily_total=payload.daily_total,
     )
-    try:
-        db.supplier_orders.insert_one(doc)
-    except DuplicateKeyError:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="该日期下此店铺的该供应商订单已存在",
-        )
+    db.supplier_orders.insert_one(doc)
     return SupplierOrder.from_doc(doc)
 
 
@@ -129,17 +123,11 @@ def update_order(order_id: int, payload: OrderUpdate, db: Database = Depends(get
         return SupplierOrder.from_doc(existing)
 
     data["updated_at"] = utcnow()
-    try:
-        result = db.supplier_orders.find_one_and_update(
-            {"_id": order_id},
-            {"$set": data},
-            return_document=ReturnDocument.AFTER,
-        )
-    except DuplicateKeyError:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="该日期下此店铺的该供应商订单已存在",
-        )
+    result = db.supplier_orders.find_one_and_update(
+        {"_id": order_id},
+        {"$set": data},
+        return_document=ReturnDocument.AFTER,
+    )
     return SupplierOrder.from_doc(result)
 
 

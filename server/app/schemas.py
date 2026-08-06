@@ -30,6 +30,7 @@ class OrderOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    order_no: str
     order_date: date
     shop_name: str
     supplier_name: str

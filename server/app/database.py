@@ -36,22 +36,48 @@ def next_id(db: Database, collection_name: str) -> int:
     return int(result["seq"])
 
 
+def next_order_no(db: Database, order_date=None) -> str:
+    """按日期+时分秒生成编号，例如 20260806143025。"""
+    from datetime import date, datetime
+
+    now = datetime.now().astimezone()
+    if isinstance(order_date, datetime):
+        stamp_dt = order_date if order_date.tzinfo else order_date.replace(tzinfo=now.tzinfo)
+    elif isinstance(order_date, date):
+        stamp_dt = now.replace(
+            year=order_date.year, month=order_date.month, day=order_date.day
+        )
+    else:
+        stamp_dt = now
+
+    stamp = stamp_dt.strftime("%Y%m%d%H%M%S")
+    seq = next_id(db, f"supplier_orders_no:{stamp}")
+    if seq == 1:
+        return stamp
+    return f"{stamp}-{seq:02d}"
+
+
 def ensure_indexes() -> None:
     db = get_database()
     db.users.create_index("username", unique=True)
     db.shops.create_index("name", unique=True)
     db.suppliers.create_index("name", unique=True)
+    # 允许同日同店同供应商多笔订单；去掉历史唯一索引
+    try:
+        db.supplier_orders.drop_index("uq_date_shop_supplier")
+    except Exception:
+        pass
     db.supplier_orders.create_index(
         [
             ("order_date", ASCENDING),
             ("shop_name", ASCENDING),
             ("supplier_name", ASCENDING),
         ],
-        unique=True,
-        name="uq_date_shop_supplier",
+        name="idx_date_shop_supplier",
     )
     db.supplier_orders.create_index("order_date")
     db.supplier_orders.create_index("shop_name")
+    db.supplier_orders.create_index("order_no", unique=True, sparse=True)
 
 
 __all__ = [
@@ -60,4 +86,5 @@ __all__ = [
     "get_database",
     "get_db",
     "next_id",
+    "next_order_no",
 ]
