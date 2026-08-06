@@ -7,13 +7,13 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from .auth import get_session_secret, require_user, router as auth_router
-from .database import Base, engine
+from .database import ensure_indexes
 from .routers import router as orders_router
 from .seed import seed_catalog
 from .shops import router as shops_router
 from .suppliers import router as suppliers_router
 
-Base.metadata.create_all(bind=engine)
+ensure_indexes()
 seed_catalog()
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"

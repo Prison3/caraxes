@@ -6,11 +6,12 @@ from datetime import date
 from typing import List, Optional, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from pymongo import ReturnDocument
+from pymongo.database import Database
+from pymongo.errors import DuplicateKeyError
 
-from .database import get_db
-from .models import SupplierOrder
+from .database import get_db, next_id
+from .models import SupplierOrder, build_order_doc, serialize_order_date, utcnow
 from .schemas import OrderCreate, OrderOut, OrderUpdate
 
 router = APIRouter(prefix="/api/orders", tags=["orders"])
@@ -33,24 +34,22 @@ def _strip_fields(data: dict) -> dict:
 
 
 @router.post("", response_model=OrderOut, status_code=status.HTTP_201_CREATED)
-def create_order(payload: OrderCreate, db: Session = Depends(get_db)):
-    order = SupplierOrder(
+def create_order(payload: OrderCreate, db: Database = Depends(get_db)):
+    doc = build_order_doc(
+        order_id=next_id(db, "supplier_orders"),
         order_date=payload.order_date,
         shop_name=payload.shop_name.strip(),
         supplier_name=payload.supplier_name.strip(),
         daily_total=payload.daily_total,
     )
-    db.add(order)
     try:
-        db.commit()
-    except IntegrityError:
-        db.rollback()
+        db.supplier_orders.insert_one(doc)
+    except DuplicateKeyError:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="该日期下此店铺的该供应商订单已存在",
         )
-    db.refresh(order)
-    return order
+    return SupplierOrder.from_doc(doc)
 
 
 @router.get("", response_model=List[OrderOut])
@@ -66,9 +65,9 @@ def list_orders(
     limit: Optional[int] = Query(
         None, ge=1, le=100, description="返回条数上限（按最近优先）"
     ),
-    db: Session = Depends(get_db),
+    db: Database = Depends(get_db),
 ):
-    query = db.query(SupplierOrder)
+    filters: dict = {}
 
     if month is not None:
         if not _MONTH_RE.match(month):
@@ -77,74 +76,75 @@ def list_orders(
                 detail="month 格式应为 YYYY-MM",
             )
         start, end = _month_bounds(month)
-        query = query.filter(
-            SupplierOrder.order_date >= start,
-            SupplierOrder.order_date <= end,
-        )
+        filters["order_date"] = {
+            "$gte": serialize_order_date(start),
+            "$lte": serialize_order_date(end),
+        }
     elif date_from is not None or date_to is not None:
         if date_from is not None and date_to is not None and date_from > date_to:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="起始日期不能晚于结束日期",
             )
+        date_filter: dict = {}
         if date_from is not None:
-            query = query.filter(SupplierOrder.order_date >= date_from)
+            date_filter["$gte"] = serialize_order_date(date_from)
         if date_to is not None:
-            query = query.filter(SupplierOrder.order_date <= date_to)
+            date_filter["$lte"] = serialize_order_date(date_to)
+        filters["order_date"] = date_filter
     elif order_date is not None:
-        query = query.filter(SupplierOrder.order_date == order_date)
+        filters["order_date"] = serialize_order_date(order_date)
 
     if shop_name:
-        query = query.filter(SupplierOrder.shop_name.contains(shop_name.strip()))
+        filters["shop_name"] = {"$regex": re.escape(shop_name.strip())}
     if supplier_name:
-        query = query.filter(SupplierOrder.supplier_name.contains(supplier_name.strip()))
+        filters["supplier_name"] = {"$regex": re.escape(supplier_name.strip())}
+
+    cursor = db.supplier_orders.find(filters)
     if limit is not None:
-        query = query.order_by(
-            SupplierOrder.created_at.desc(),
-            SupplierOrder.id.desc(),
-        ).limit(limit)
+        cursor = cursor.sort([("created_at", -1), ("_id", -1)]).limit(limit)
     else:
-        query = query.order_by(
-            SupplierOrder.order_date.desc(),
-            SupplierOrder.id.desc(),
-        )
-    return query.all()
+        cursor = cursor.sort([("order_date", -1), ("_id", -1)])
+    return [SupplierOrder.from_doc(doc) for doc in cursor]
 
 
 @router.get("/{order_id}", response_model=OrderOut)
-def get_order(order_id: int, db: Session = Depends(get_db)):
-    order = db.get(SupplierOrder, order_id)
-    if order is None:
+def get_order(order_id: int, db: Database = Depends(get_db)):
+    doc = db.supplier_orders.find_one({"_id": order_id})
+    if doc is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="订单不存在")
-    return order
+    return SupplierOrder.from_doc(doc)
 
 
 @router.put("/{order_id}", response_model=OrderOut)
-def update_order(order_id: int, payload: OrderUpdate, db: Session = Depends(get_db)):
-    order = db.get(SupplierOrder, order_id)
-    if order is None:
+def update_order(order_id: int, payload: OrderUpdate, db: Database = Depends(get_db)):
+    existing = db.supplier_orders.find_one({"_id": order_id})
+    if existing is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="订单不存在")
 
     data = _strip_fields(payload.model_dump(exclude_unset=True))
-    for key, value in data.items():
-        setattr(order, key, value)
+    if "order_date" in data and data["order_date"] is not None:
+        data["order_date"] = serialize_order_date(data["order_date"])
+    if not data:
+        return SupplierOrder.from_doc(existing)
 
+    data["updated_at"] = utcnow()
     try:
-        db.commit()
-    except IntegrityError:
-        db.rollback()
+        result = db.supplier_orders.find_one_and_update(
+            {"_id": order_id},
+            {"$set": data},
+            return_document=ReturnDocument.AFTER,
+        )
+    except DuplicateKeyError:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="该日期下此店铺的该供应商订单已存在",
         )
-    db.refresh(order)
-    return order
+    return SupplierOrder.from_doc(result)
 
 
 @router.delete("/{order_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_order(order_id: int, db: Session = Depends(get_db)):
-    order = db.get(SupplierOrder, order_id)
-    if order is None:
+def delete_order(order_id: int, db: Database = Depends(get_db)):
+    result = db.supplier_orders.delete_one({"_id": order_id})
+    if result.deleted_count == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="订单不存在")
-    db.delete(order)
-    db.commit()

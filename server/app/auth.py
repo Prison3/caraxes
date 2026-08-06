@@ -6,7 +6,7 @@ import os
 import secrets
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from sqlalchemy.orm import Session
+from pymongo.database import Database
 
 from .database import get_db
 from .models import User
@@ -47,32 +47,33 @@ def get_session_secret() -> str:
     return os.environ.get("SECRET_KEY", "caraxes-dev-secret-change-me")
 
 
-def require_user(request: Request, db: Session = Depends(get_db)) -> User:
+def require_user(request: Request, db: Database = Depends(get_db)) -> User:
     user_id = request.session.get(SESSION_KEY)
     if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="未登录",
         )
-    user = db.get(User, user_id)
-    if user is None:
+    doc = db.users.find_one({"_id": int(user_id)})
+    if doc is None:
         request.session.clear()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="未登录",
         )
-    return user
+    return User.from_doc(doc)
 
 
 @router.post("/login", response_model=UserOut)
-def login(payload: LoginIn, request: Request, db: Session = Depends(get_db)):
+def login(payload: LoginIn, request: Request, db: Database = Depends(get_db)):
     username = payload.username.strip()
-    user = db.query(User).filter(User.username == username).first()
-    if user is None or not verify_password(payload.password, user.password_hash):
+    doc = db.users.find_one({"username": username})
+    if doc is None or not verify_password(payload.password, doc["password_hash"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="用户名或密码错误",
         )
+    user = User.from_doc(doc)
     request.session[SESSION_KEY] = user.id
     return user
 

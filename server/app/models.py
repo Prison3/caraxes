@@ -1,74 +1,115 @@
-from datetime import date, datetime
+from __future__ import annotations
 
-from sqlalchemy import Date, DateTime, Integer, Numeric, String, UniqueConstraint, func
-from sqlalchemy.orm import Mapped, mapped_column
-
-from .database import Base
-
-
-class User(Base):
-    __tablename__ = "users"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    username: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
-    password_hash: Mapped[str] = mapped_column(String(200), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        nullable=False,
-    )
+from dataclasses import dataclass
+from datetime import date, datetime, timezone
+from typing import Any, Mapping, Optional
 
 
-class Shop(Base):
-    __tablename__ = "shops"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    name: Mapped[str] = mapped_column(String(200), nullable=False, unique=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        nullable=False,
-    )
+def utcnow() -> datetime:
+    return datetime.now(timezone.utc)
 
 
-class Supplier(Base):
-    __tablename__ = "suppliers"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    name: Mapped[str] = mapped_column(String(200), nullable=False, unique=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        nullable=False,
-    )
+def parse_order_date(value: Any) -> date:
+    if isinstance(value, date) and not isinstance(value, datetime):
+        return value
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, str):
+        return date.fromisoformat(value[:10])
+    raise TypeError(f"unsupported order_date type: {type(value)!r}")
 
 
-class SupplierOrder(Base):
-    __tablename__ = "supplier_orders"
-    __table_args__ = (
-        UniqueConstraint(
-            "order_date",
-            "shop_name",
-            "supplier_name",
-            name="uq_date_shop_supplier",
-        ),
-    )
+def serialize_order_date(value: date) -> str:
+    return value.isoformat()
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    order_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
-    shop_name: Mapped[str] = mapped_column(String(200), nullable=False, index=True)
-    supplier_name: Mapped[str] = mapped_column(String(200), nullable=False)
-    daily_total: Mapped[float] = mapped_column(
-        Numeric(12, 2, asdecimal=False), nullable=False
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        nullable=False,
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        onupdate=func.now(),
-        nullable=False,
-    )
+
+@dataclass
+class User:
+    id: int
+    username: str
+    password_hash: str
+    created_at: datetime
+
+    @classmethod
+    def from_doc(cls, doc: Mapping[str, Any]) -> "User":
+        return cls(
+            id=int(doc["_id"]),
+            username=doc["username"],
+            password_hash=doc["password_hash"],
+            created_at=doc["created_at"],
+        )
+
+
+@dataclass
+class Shop:
+    id: int
+    name: str
+    created_at: datetime
+
+    @classmethod
+    def from_doc(cls, doc: Mapping[str, Any]) -> "Shop":
+        return cls(
+            id=int(doc["_id"]),
+            name=doc["name"],
+            created_at=doc["created_at"],
+        )
+
+
+@dataclass
+class Supplier:
+    id: int
+    name: str
+    created_at: datetime
+
+    @classmethod
+    def from_doc(cls, doc: Mapping[str, Any]) -> "Supplier":
+        return cls(
+            id=int(doc["_id"]),
+            name=doc["name"],
+            created_at=doc["created_at"],
+        )
+
+
+@dataclass
+class SupplierOrder:
+    id: int
+    order_date: date
+    shop_name: str
+    supplier_name: str
+    daily_total: float
+    created_at: datetime
+    updated_at: datetime
+
+    @classmethod
+    def from_doc(cls, doc: Mapping[str, Any]) -> "SupplierOrder":
+        return cls(
+            id=int(doc["_id"]),
+            order_date=parse_order_date(doc["order_date"]),
+            shop_name=doc["shop_name"],
+            supplier_name=doc["supplier_name"],
+            daily_total=float(doc["daily_total"]),
+            created_at=doc["created_at"],
+            updated_at=doc["updated_at"],
+        )
+
+
+def build_order_doc(
+    *,
+    order_id: int,
+    order_date: date,
+    shop_name: str,
+    supplier_name: str,
+    daily_total: float,
+    created_at: Optional[datetime] = None,
+    updated_at: Optional[datetime] = None,
+) -> dict[str, Any]:
+    now = utcnow()
+    return {
+        "_id": order_id,
+        "order_date": serialize_order_date(order_date),
+        "shop_name": shop_name,
+        "supplier_name": supplier_name,
+        "daily_total": float(daily_total),
+        "created_at": created_at or now,
+        "updated_at": updated_at or now,
+    }

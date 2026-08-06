@@ -7,10 +7,19 @@ Android App 向服务端上报每日供应商订单（日期、店铺名、供�
 ### 环境
 
 - Python 3.10+
+- MongoDB 6+（默认连接 `mongodb://127.0.0.1:27017`，库名 `caraxes`）
+
+可通过环境变量覆盖：
+
+- `MONGODB_URI`：MongoDB 连接串
+- `MONGODB_DB`：数据库名
 
 ### 安装与启动
 
 ```bash
+# 确保本地 MongoDB 已启动，例如：
+# sudo systemctl start mongod
+
 cd server
 python3 -m venv .venv
 source .venv/bin/activate
