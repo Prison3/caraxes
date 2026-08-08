@@ -2,7 +2,9 @@
   const form = document.getElementById("orderForm");
   const orderDate = document.getElementById("orderDate");
   const shopName = document.getElementById("shopName");
+  const shopPicker = document.getElementById("shopPicker");
   const supplierName = document.getElementById("supplierName");
+  const supplierPicker = document.getElementById("supplierPicker");
   const dailyTotal = document.getElementById("dailyTotal");
   const submitBtn = document.getElementById("submitBtn");
   const formMsg = document.getElementById("formMsg");
@@ -19,7 +21,9 @@
   const calToday = document.getElementById("calToday");
   const calClear = document.getElementById("calClear");
   const queryShop = document.getElementById("queryShop");
+  const queryShopPicker = document.getElementById("queryShopPicker");
   const querySupplier = document.getElementById("querySupplier");
+  const querySupplierPicker = document.getElementById("querySupplierPicker");
   const queryBtn = document.getElementById("queryBtn");
   const resetQueryBtn = document.getElementById("resetQueryBtn");
   const queryMsg = document.getElementById("queryMsg");
@@ -383,35 +387,63 @@
     return `请求失败（HTTP ${res.status}）`;
   }
 
-  function fillSelect(select, items, placeholder, keepValue) {
-    const current = keepValue ? select.value : "";
-    select.innerHTML = "";
-    const first = document.createElement("option");
-    first.value = "";
-    first.textContent = placeholder;
-    if (placeholder.startsWith("请选择")) first.disabled = true;
-    select.appendChild(first);
-    for (const item of items) {
-      const opt = document.createElement("option");
-      opt.value = item.name;
-      opt.textContent = item.name;
-      select.appendChild(opt);
+  function renderChipPicker(container, hiddenInput, items, options = {}) {
+    const {
+      allowEmpty = false,
+      emptyLabel = "全部",
+      emptyHint = "暂无选项，请先在管理页添加",
+      keepValue = true,
+    } = options;
+    let selected = keepValue ? hiddenInput.value : "";
+    if (selected && !items.some((x) => x.name === selected)) {
+      selected = "";
+      hiddenInput.value = "";
     }
-    if (current && items.some((x) => x.name === current)) {
-      select.value = current;
-    } else if (placeholder.startsWith("请选择")) {
-      select.selectedIndex = 0;
+
+    container.innerHTML = "";
+
+    const addChip = (value, label) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "chip" + (selected === value ? " active" : "");
+      btn.setAttribute("role", "option");
+      btn.setAttribute("aria-selected", selected === value ? "true" : "false");
+      btn.textContent = label;
+      btn.addEventListener("click", () => {
+        hiddenInput.value = value;
+        renderChipPicker(container, hiddenInput, items, options);
+      });
+      container.appendChild(btn);
+    };
+
+    if (allowEmpty) addChip("", emptyLabel);
+    for (const item of items) {
+      addChip(item.name, item.name);
+    }
+    if (!items.length && !allowEmpty) {
+      const empty = document.createElement("p");
+      empty.className = "chip-empty";
+      empty.textContent = emptyHint;
+      container.appendChild(empty);
     }
   }
 
-  function renderManageList(ul, items, onDelete) {
-    ul.innerHTML = "";
+  function renderManageGrid(container, items, onDelete, emptyText = "暂无数据") {
+    container.innerHTML = "";
+    if (!items.length) {
+      const empty = document.createElement("p");
+      empty.className = "chip-empty";
+      empty.textContent = emptyText;
+      container.appendChild(empty);
+      return;
+    }
     for (const item of items) {
-      const li = document.createElement("li");
-      li.innerHTML = `<span class="name"></span><button type="button" class="delete-btn">删除</button>`;
-      li.querySelector(".name").textContent = item.name;
-      li.querySelector(".delete-btn").addEventListener("click", () => onDelete(item));
-      ul.appendChild(li);
+      const cell = document.createElement("div");
+      cell.className = "manage-chip";
+      cell.innerHTML = `<span class="name"></span><button type="button" class="delete-btn">删除</button>`;
+      cell.querySelector(".name").textContent = item.name;
+      cell.querySelector(".delete-btn").addEventListener("click", () => onDelete(item));
+      container.appendChild(cell);
     }
   }
 
@@ -425,12 +457,28 @@
     shops = await shopRes.json();
     suppliers = await supplierRes.json();
 
-    fillSelect(shopName, shops, "请选择店铺", true);
-    fillSelect(supplierName, suppliers, "请选择供应商", true);
-    fillSelect(queryShop, shops, "全部店铺", true);
-    fillSelect(querySupplier, suppliers, "全部供应商", true);
-    renderManageList(shopManageList, shops, deleteShop);
-    renderManageList(supplierManageList, suppliers, deleteSupplier);
+    renderChipPicker(shopPicker, shopName, shops, {
+      allowEmpty: false,
+      emptyHint: "暂无店铺，请先在管理页添加",
+      keepValue: true,
+    });
+    renderChipPicker(supplierPicker, supplierName, suppliers, {
+      allowEmpty: false,
+      emptyHint: "暂无供应商，请先在管理页添加",
+      keepValue: true,
+    });
+    renderChipPicker(queryShopPicker, queryShop, shops, {
+      allowEmpty: true,
+      emptyLabel: "全部店铺",
+      keepValue: true,
+    });
+    renderChipPicker(querySupplierPicker, querySupplier, suppliers, {
+      allowEmpty: true,
+      emptyLabel: "全部供应商",
+      keepValue: true,
+    });
+    renderManageGrid(shopManageList, shops, deleteShop, "暂无店铺");
+    renderManageGrid(supplierManageList, suppliers, deleteSupplier, "暂无供应商");
   }
 
   async function deleteShop(item) {
@@ -847,6 +895,16 @@
     queryDate.value = todayISO();
     queryShop.value = "";
     querySupplier.value = "";
+    renderChipPicker(queryShopPicker, queryShop, shops, {
+      allowEmpty: true,
+      emptyLabel: "全部店铺",
+      keepValue: false,
+    });
+    renderChipPicker(querySupplierPicker, querySupplier, suppliers, {
+      allowEmpty: true,
+      emptyLabel: "全部供应商",
+      keepValue: false,
+    });
     rangeAnchor = null;
     setCalOpen(false);
     queryOrders();

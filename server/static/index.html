@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>供应商管理系统</title>
   <script src="/static/device.js?v=2"></script>
-  <link rel="stylesheet" href="/static/style.css?v=20260808d" />
+  <link rel="stylesheet" href="/static/style.css?v=20260808h" />
 </head>
 <body>
   <header class="topbar">
@@ -30,18 +30,16 @@
           日期
           <input type="date" id="orderDate" name="order_date" required />
         </label>
-        <label>
-          店铺名
-          <select id="shopName" name="shop_name" required>
-            <option value="" disabled selected>请选择店铺</option>
-          </select>
-        </label>
-        <label>
-          供应商名
-          <select id="supplierName" name="supplier_name" required>
-            <option value="" disabled selected>请选择供应商</option>
-          </select>
-        </label>
+        <div class="choice-field">
+          <span class="choice-label">店铺名</span>
+          <input type="hidden" id="shopName" name="shop_name" value="" />
+          <div id="shopPicker" class="chip-grid" role="listbox" aria-label="选择店铺"></div>
+        </div>
+        <div class="choice-field">
+          <span class="choice-label">供应商名</span>
+          <input type="hidden" id="supplierName" name="supplier_name" value="" />
+          <div id="supplierPicker" class="chip-grid" role="listbox" aria-label="选择供应商"></div>
+        </div>
         <label>
           单日总金额
           <input type="number" id="dailyTotal" name="daily_total" placeholder="例如：1280.50" min="0.01" step="0.01" required />
@@ -114,18 +112,16 @@
             </div>
           </div>
         </label>
-        <label>
-          店铺名
-          <select id="queryShop">
-            <option value="">全部店铺</option>
-          </select>
-        </label>
-        <label>
-          供应商名
-          <select id="querySupplier">
-            <option value="">全部供应商</option>
-          </select>
-        </label>
+        <div class="choice-field">
+          <span class="choice-label">店铺名</span>
+          <input type="hidden" id="queryShop" value="" />
+          <div id="queryShopPicker" class="chip-grid" role="listbox" aria-label="筛选店铺"></div>
+        </div>
+        <div class="choice-field">
+          <span class="choice-label">供应商名</span>
+          <input type="hidden" id="querySupplier" value="" />
+          <div id="querySupplierPicker" class="chip-grid" role="listbox" aria-label="筛选供应商"></div>
+        </div>
         <div class="query-actions">
           <button type="submit" id="queryBtn">查询</button>
           <button type="button" id="resetQueryBtn" class="btn-secondary">重置</button>
@@ -165,7 +161,7 @@
         <button type="submit">添加店铺</button>
       </form>
       <p id="shopMsg" class="msg" hidden></p>
-      <ul id="shopManageList" class="manage-list"></ul>
+      <div id="shopManageList" class="chip-grid manage-grid" aria-label="店铺列表"></div>
 
       <h2 class="section-gap">添加供应商</h2>
       <form id="supplierForm" class="inline-form">
@@ -173,7 +169,7 @@
         <button type="submit">添加供应商</button>
       </form>
       <p id="supplierMsg" class="msg" hidden></p>
-      <ul id="supplierManageList" class="manage-list"></ul>
+      <div id="supplierManageList" class="chip-grid manage-grid" aria-label="供应商列表"></div>
     </section>
   </main>
 
@@ -201,6 +197,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=20260808c"></script>
+  <script src="/static/app.js?v=20260808e"></script>
 </body>
 </html>
