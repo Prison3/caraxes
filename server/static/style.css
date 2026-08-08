@@ -518,6 +518,38 @@ html.is-pc .login-shell {
   color: var(--muted);
   line-height: 1.5;
   font-size: 0.95rem;
+  white-space: pre-line;
+}
+
+.modal-password {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.9rem;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+.modal-password[hidden] {
+  display: none;
+}
+
+.modal-password input {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-size: var(--fs-input);
+}
+
+.modal-password-error {
+  margin: 0.45rem 0 0;
+  font-size: var(--fs-xs);
+}
+
+.modal-password-error[hidden] {
+  display: none;
 }
 
 .modal-actions {

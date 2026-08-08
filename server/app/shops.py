@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pymongo.database import Database
 from pymongo.errors import DuplicateKeyError
 
+from .confirm import require_admin_confirm
 from .database import get_db, next_id
 from .models import Shop, utcnow
 from .schemas import NameCreate, ShopOut
@@ -35,7 +36,11 @@ def create_shop(payload: NameCreate, db: Database = Depends(get_db)):
 
 
 @router.delete("/{shop_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_shop(shop_id: int, db: Database = Depends(get_db)):
+def delete_shop(
+    shop_id: int,
+    db: Database = Depends(get_db),
+    _: None = Depends(require_admin_confirm),
+):
     result = db.shops.delete_one({"_id": shop_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="店铺不存在")

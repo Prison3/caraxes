@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pymongo import ReturnDocument
 from pymongo.database import Database
 
+from .confirm import require_admin_confirm
 from .database import get_db, next_id, next_order_no
 from .models import SupplierOrder, build_order_doc, serialize_order_date, utcnow
 from .schemas import OrderCreate, OrderOut, OrderUpdate
@@ -132,7 +133,11 @@ def update_order(order_id: int, payload: OrderUpdate, db: Database = Depends(get
 
 
 @router.delete("/{order_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_order(order_id: int, db: Database = Depends(get_db)):
+def delete_order(
+    order_id: int,
+    db: Database = Depends(get_db),
+    _: None = Depends(require_admin_confirm),
+):
     result = db.supplier_orders.delete_one({"_id": order_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="订单不存在")

@@ -55,6 +55,9 @@
   const dupText = document.getElementById("dupText");
   const dupYes = document.getElementById("dupYes");
   const dupNo = document.getElementById("dupNo");
+  const dupPasswordWrap = document.getElementById("dupPasswordWrap");
+  const dupPassword = document.getElementById("dupPassword");
+  const dupPasswordError = document.getElementById("dupPasswordError");
   const currentUser = document.getElementById("currentUser");
   const logoutBtn = document.getElementById("logoutBtn");
   const recentList = document.getElementById("recentList");
@@ -62,7 +65,11 @@
   const recentEmpty = document.getElementById("recentEmpty");
   const recentMeta = document.getElementById("recentMeta");
 
+  const ADMIN_CONFIRM_PASSWORD = "longcudangjia";
+  const ADMIN_CONFIRM_HEADER = "X-Admin-Confirm";
+
   let dupResolve = null;
+  let dupRequirePassword = false;
   let shops = [];
   let suppliers = [];
 
@@ -284,21 +291,50 @@
     return Math.abs(Number(a) - Number(b)) < 0.001;
   }
 
-  function openModal({ title, text, yesText, noText, danger = false }) {
+  function openModal({
+    title,
+    text,
+    yesText,
+    noText,
+    danger = false,
+    requirePassword = false,
+  }) {
     dupTitle.textContent = title;
     dupText.textContent = text;
     dupYes.textContent = yesText;
     dupNo.textContent = noText;
     dupYes.className = danger ? "btn-danger" : "btn-primary";
     dupNo.className = "btn-secondary";
+    dupRequirePassword = !!requirePassword;
+    dupPasswordWrap.hidden = !dupRequirePassword;
+    dupPasswordError.hidden = true;
+    dupPasswordError.textContent = "";
+    dupPassword.value = "";
     dupModal.hidden = false;
+    if (dupRequirePassword) {
+      setTimeout(() => dupPassword.focus(), 30);
+    }
     return new Promise((resolve) => {
       dupResolve = resolve;
     });
   }
 
   function closeModal(result) {
+    if (result && dupRequirePassword) {
+      const pwd = dupPassword.value.trim();
+      if (pwd !== ADMIN_CONFIRM_PASSWORD) {
+        dupPasswordError.hidden = false;
+        dupPasswordError.textContent = "管理密码错误";
+        dupPassword.focus();
+        dupPassword.select();
+        return;
+      }
+    }
     dupModal.hidden = true;
+    dupRequirePassword = false;
+    dupPasswordWrap.hidden = true;
+    dupPassword.value = "";
+    dupPasswordError.hidden = true;
     if (dupResolve) {
       const resolve = dupResolve;
       dupResolve = null;
@@ -306,9 +342,33 @@
     }
   }
 
+  async function confirmDelete(text) {
+    return openModal({
+      title: "确认删除",
+      text: `${text}\n请输入管理密码后确认。`,
+      yesText: "确定删除",
+      noText: "取消",
+      danger: true,
+      requirePassword: true,
+    });
+  }
+
+  function adminConfirmHeaders(extra = {}) {
+    return {
+      ...extra,
+      [ADMIN_CONFIRM_HEADER]: ADMIN_CONFIRM_PASSWORD,
+    };
+  }
+
   dupYes.addEventListener("click", () => closeModal(true));
   dupNo.addEventListener("click", () => closeModal(false));
   dupModal.querySelector(".modal-backdrop").addEventListener("click", () => closeModal(false));
+  dupPassword.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      closeModal(true);
+    }
+  });
 
   async function parseError(res) {
     try {
@@ -374,15 +434,12 @@
   }
 
   async function deleteShop(item) {
-    const ok = await openModal({
-      title: "确认删除",
-      text: `确认删除店铺「${item.name}」？`,
-      yesText: "确定删除",
-      noText: "取消",
-      danger: true,
-    });
+    const ok = await confirmDelete(`确认删除店铺「${item.name}」？`);
     if (!ok) return;
-    const res = await api(`/api/shops/${item.id}`, { method: "DELETE" });
+    const res = await api(`/api/shops/${item.id}`, {
+      method: "DELETE",
+      headers: adminConfirmHeaders(),
+    });
     if (!res.ok && res.status !== 204) {
       showMsg(shopMsg, await parseError(res), false);
       return;
@@ -392,15 +449,12 @@
   }
 
   async function deleteSupplier(item) {
-    const ok = await openModal({
-      title: "确认删除",
-      text: `确认删除供应商「${item.name}」？`,
-      yesText: "确定删除",
-      noText: "取消",
-      danger: true,
-    });
+    const ok = await confirmDelete(`确认删除供应商「${item.name}」？`);
     if (!ok) return;
-    const res = await api(`/api/suppliers/${item.id}`, { method: "DELETE" });
+    const res = await api(`/api/suppliers/${item.id}`, {
+      method: "DELETE",
+      headers: adminConfirmHeaders(),
+    });
     if (!res.ok && res.status !== 204) {
       showMsg(supplierMsg, await parseError(res), false);
       return;
@@ -545,17 +599,14 @@
   }
 
   async function deleteOrder(id) {
-    const confirmed = await openModal({
-      title: "确认删除",
-      text: "确认删除这条订单？",
-      yesText: "确定删除",
-      noText: "取消",
-      danger: true,
-    });
+    const confirmed = await confirmDelete("确认删除这条订单？");
     if (!confirmed) return;
     const msgEl = panelCreate.hidden ? queryMsg : formMsg;
     try {
-      const res = await api(`/api/orders/${id}`, { method: "DELETE" });
+      const res = await api(`/api/orders/${id}`, {
+        method: "DELETE",
+        headers: adminConfirmHeaders(),
+      });
       if (!res.ok && res.status !== 204) throw new Error(await parseError(res));
       showMsg(msgEl, "已删除", true);
       await loadRecentOrders();

@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pymongo.database import Database
 from pymongo.errors import DuplicateKeyError
 
+from .confirm import require_admin_confirm
 from .database import get_db, next_id
 from .models import Supplier, utcnow
 from .schemas import NameCreate, SupplierOut
@@ -37,7 +38,11 @@ def create_supplier(payload: NameCreate, db: Database = Depends(get_db)):
 
 
 @router.delete("/{supplier_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_supplier(supplier_id: int, db: Database = Depends(get_db)):
+def delete_supplier(
+    supplier_id: int,
+    db: Database = Depends(get_db),
+    _: None = Depends(require_admin_confirm),
+):
     result = db.suppliers.delete_one({"_id": supplier_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="供应商不存在")
