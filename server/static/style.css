@@ -8,20 +8,41 @@
   --danger: #b42318;
   --ok: #1b4d3e;
   --err: #9b1c1c;
+
+  /* 全局字号阶梯（整体小一号）；订单列表见 .orders-readable */
+  --fs-xs: 0.6875rem;
+  --fs-sm: 0.8125rem;
+  --fs-base: 0.9375rem;
+  --fs-md: 1rem;
+  --fs-lg: 1.0625rem;
+  --fs-xl: 1.125rem;
+  --fs-input: max(0.9375rem, 16px);
+  --touch-min: 44px;
 }
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* 手机窄屏略小，平板/桌面略大 */
+  font-size: clamp(14px, 3.6vw, 16px);
+}
+
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  font-size: var(--fs-base);
+  line-height: 1.5;
   color: var(--ink);
   background:
     radial-gradient(ellipse 80% 50% at 10% -10%, rgba(27, 77, 62, 0.12), transparent),
     linear-gradient(180deg, #ebe6dc 0%, var(--cream) 40%, #f3efe8 100%);
+  -webkit-tap-highlight-color: rgba(27, 77, 62, 0.12);
 }
 
 .topbar {
@@ -35,11 +56,11 @@ body {
 
 .topbar h1 {
   margin: 0;
-  font-size: clamp(0.95rem, 3.5vw, 1.15rem);
+  font-size: clamp(0.875rem, 3.4vw, 1.1rem);
   font-weight: 600;
   letter-spacing: 0.02em;
   line-height: 1.25;
-  max-width: min(70vw, 22rem);
+  max-width: min(68vw, 22rem);
 }
 
 .wrap {
@@ -69,9 +90,11 @@ body {
   border-radius: 9px;
   background: transparent;
   color: var(--muted);
-  font-size: 0.95rem;
+  font-size: var(--fs-sm);
   font-weight: 600;
-  height: 40px;
+  min-height: var(--touch-min);
+  height: auto;
+  padding: 0.55rem 0.25rem;
   cursor: pointer;
 }
 
@@ -82,13 +105,13 @@ body {
 
 .panel h2 {
   margin: 0 0 1rem;
-  font-size: 1rem;
+  font-size: var(--fs-md);
   font-weight: 600;
 }
 
 .panel h3 {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: var(--fs-sm);
   font-weight: 600;
 }
 
@@ -105,8 +128,15 @@ form,
 label {
   display: grid;
   gap: 0.35rem;
-  font-size: 0.875rem;
+  font-size: var(--fs-sm);
   color: var(--muted);
+}
+
+input,
+select,
+textarea,
+button {
+  font-family: inherit;
 }
 
 input,
@@ -117,7 +147,8 @@ select {
   border-radius: 8px;
   background: #fff;
   color: var(--ink);
-  font-size: 1rem;
+  font-size: var(--fs-input);
+  line-height: 1.35;
   outline: none;
 }
 
@@ -139,10 +170,12 @@ select:focus {
 
 button[type="submit"],
 .query-actions button {
-  height: 48px;
+  min-height: 48px;
+  height: auto;
+  padding: 0.75rem 1rem;
   border: 0;
   border-radius: 10px;
-  font-size: 1rem;
+  font-size: var(--fs-input);
   font-weight: 600;
   cursor: pointer;
 }
@@ -184,7 +217,7 @@ button[type="submit"],
 
 .msg {
   margin: 0.85rem 0 0;
-  font-size: 0.9rem;
+  font-size: var(--fs-sm);
 }
 
 .msg.ok {
@@ -206,13 +239,13 @@ button[type="submit"],
 }
 
 .meta {
-  font-size: 0.75rem;
+  font-size: var(--fs-xs);
   color: var(--muted);
 }
 
 .sum-meta {
   margin: 0.55rem 0 0;
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--forest);
 }
@@ -228,20 +261,21 @@ button[type="submit"],
 .result-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.78rem;
-  min-width: 480px;
+  font-size: var(--fs-sm);
+  min-width: 420px;
 }
 
 .result-table th,
 .result-table td {
-  padding: 0.45rem 0.5rem;
+  padding: 0.55rem 0.5rem;
   text-align: left;
   border-bottom: 1px solid var(--line);
   vertical-align: middle;
+  word-break: break-word;
 }
 
 .result-table th {
-  font-size: 0.72rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--muted);
   background: rgba(27, 77, 62, 0.06);
@@ -266,7 +300,7 @@ button[type="submit"],
 .result-table .col-date {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
-  font-size: 0.72rem;
+  font-size: var(--fs-xs);
 }
 
 .result-table .ops {
@@ -278,9 +312,10 @@ button[type="submit"],
   border: 0;
   background: transparent;
   color: var(--danger);
-  font-size: 0.75rem;
+  font-size: var(--fs-xs);
   cursor: pointer;
-  padding: 0.2rem 0.35rem;
+  padding: 0.35rem 0.45rem;
+  min-height: 36px;
   white-space: nowrap;
 }
 
@@ -299,6 +334,149 @@ button[type="submit"],
 @media (min-width: 640px) {
   .wrap {
     padding-top: 1.75rem;
+  }
+}
+
+/* 手机端适配：由 device.js 给 html 加上 is-mobile / is-pc */
+html.is-mobile {
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-base: 0.9375rem;
+  --fs-md: 1rem;
+  --fs-lg: 1.0625rem;
+}
+
+html.is-mobile .wrap {
+  padding: 1rem 0.85rem calc(2rem + env(safe-area-inset-bottom, 0px));
+  gap: 0.85rem;
+}
+
+html.is-mobile .topbar {
+  padding: 0.85rem 1rem;
+  padding-top: calc(0.85rem + env(safe-area-inset-top, 0px));
+}
+
+html.is-mobile .topbar-user {
+  gap: 0.5rem;
+  font-size: var(--fs-sm);
+}
+
+html.is-mobile .logout-btn {
+  min-height: 36px;
+  font-size: var(--fs-xs);
+}
+
+html.is-mobile .panel h2 {
+  font-size: var(--fs-lg);
+}
+
+html.is-mobile .panel h3 {
+  font-size: var(--fs-base);
+}
+
+html.is-mobile .msg,
+html.is-mobile .empty {
+  font-size: var(--fs-sm);
+}
+
+html.is-mobile .result-table {
+  font-size: var(--fs-sm);
+  min-width: 100%;
+}
+
+html.is-mobile .result-table th,
+html.is-mobile .result-table td {
+  padding: 0.6rem 0.45rem;
+}
+
+html.is-mobile .result-table .col-shop,
+html.is-mobile .result-table .col-supplier {
+  max-width: 5.5rem;
+}
+
+html.is-mobile .modal-card h3 {
+  font-size: var(--fs-lg);
+}
+
+html.is-mobile .modal-card p {
+  font-size: var(--fs-base);
+}
+
+html.is-mobile .modal-actions button {
+  min-height: var(--touch-min);
+  font-size: var(--fs-base);
+}
+
+html.is-mobile .login-shell {
+  width: min(100%, 400px);
+  padding: 1.5rem 1.1rem 1.5rem;
+}
+
+html.is-mobile .login-shell h1 {
+  font-size: clamp(1.5rem, 7vw, 1.9rem);
+}
+
+html.is-mobile .login-sub {
+  font-size: var(--fs-sm);
+}
+
+html.is-mobile .login-form button[type="submit"] {
+  min-height: var(--touch-min);
+  font-size: var(--fs-input);
+}
+
+html.is-mobile .cal-day,
+html.is-mobile .cal-month-cell {
+  min-height: 40px;
+  height: auto;
+  font-size: var(--fs-sm);
+}
+
+html.is-mobile .cal-hint,
+html.is-mobile .cal-title {
+  font-size: var(--fs-sm);
+}
+
+html.is-mobile .inline-form button,
+html.is-mobile .manage-list .delete-btn {
+  min-height: 40px;
+  font-size: var(--fs-sm);
+}
+
+/* PC 端适配：更宽布局，便于展示更多数据 */
+html.is-pc .wrap {
+  max-width: 1080px;
+  padding: 1.75rem 1.5rem 2.75rem;
+}
+
+html.is-pc .result-table {
+  min-width: 0;
+}
+
+html.is-pc .result-table th,
+html.is-pc .result-table td {
+  padding: 0.65rem 0.75rem;
+}
+
+html.is-pc .result-table .col-shop,
+html.is-pc .result-table .col-supplier {
+  max-width: none;
+}
+
+html.is-pc .orders-readable .result-table-wrap {
+  max-height: min(70vh, 720px);
+  overflow: auto;
+}
+
+html.is-pc .login-shell {
+  width: min(100%, 400px);
+}
+
+/* JS 未加载时的窄屏兜底 */
+@media (max-width: 768px) {
+  html:not(.is-pc):not(.is-mobile) .wrap {
+    padding: 1rem 0.85rem calc(2rem + env(safe-area-inset-bottom, 0px));
+    gap: 0.85rem;
   }
 }
 
@@ -485,7 +663,7 @@ button[type="submit"],
 
 .login-shell h1 {
   margin: 0;
-  font-size: clamp(1.85rem, 5vw, 2.25rem);
+  font-size: clamp(1.6rem, 4.5vw, 2rem);
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--forest);
@@ -496,7 +674,7 @@ button[type="submit"],
   margin: 0.55rem 0 1.75rem;
   text-align: center;
   color: var(--muted);
-  font-size: 0.95rem;
+  font-size: var(--fs-sm);
 }
 
 .login-form {
@@ -783,14 +961,51 @@ button[type="submit"],
   padding-top: 1rem;
 }
 
-.recent-block .list-head h3 {
-  font-size: 0.9rem;
-}
-
 .recent-block .result-table {
   min-width: 0;
 }
 
-.recent-block .empty {
-  font-size: 0.8rem;
+.query-results {
+  margin-top: 0.25rem;
+}
+
+/* 最近提交 / 查询结果：保持原字号，不随全局缩小 */
+.orders-readable {
+  --fs-xs: 0.8125rem;
+  --fs-sm: 0.9375rem;
+  --fs-base: 1rem;
+  font-size: var(--fs-base);
+}
+
+.orders-readable .list-head h3 {
+  font-size: var(--fs-sm);
+}
+
+.orders-readable .meta {
+  font-size: var(--fs-xs);
+}
+
+.orders-readable .sum-meta {
+  font-size: var(--fs-sm);
+}
+
+.orders-readable .result-table {
+  font-size: var(--fs-sm);
+}
+
+.orders-readable .result-table th,
+.orders-readable .result-table .col-no,
+.orders-readable .result-table .col-date,
+.orders-readable .delete-btn {
+  font-size: var(--fs-xs);
+}
+
+.orders-readable .empty {
+  font-size: var(--fs-sm);
+}
+
+html.is-mobile .orders-readable {
+  --fs-xs: 0.8125rem;
+  --fs-sm: 0.9375rem;
+  --fs-base: 1rem;
 }

@@ -2,9 +2,10 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>供应商管理系统</title>
-  <link rel="stylesheet" href="/static/style.css?v=20260806h" />
+  <script src="/static/device.js?v=2"></script>
+  <link rel="stylesheet" href="/static/style.css?v=20260808c" />
 </head>
 <body>
   <header class="topbar">
@@ -49,7 +50,7 @@
       </form>
       <p id="formMsg" class="msg" hidden></p>
 
-      <div class="recent-block">
+      <div class="recent-block orders-readable">
         <div class="list-head">
           <h3>最近提交</h3>
           <span id="recentMeta" class="meta"></span>
@@ -132,27 +133,29 @@
       </form>
       <p id="queryMsg" class="msg" hidden></p>
 
-      <div class="list-head">
-        <h3>查询结果</h3>
-        <span id="listMeta" class="meta"></span>
+      <div class="orders-readable query-results">
+        <div class="list-head">
+          <h3>查询结果</h3>
+          <span id="listMeta" class="meta"></span>
+        </div>
+        <p id="sumMeta" class="sum-meta" hidden></p>
+        <div id="resultTableWrap" class="result-table-wrap" hidden>
+          <table class="result-table" id="resultTable">
+            <thead>
+              <tr>
+                <th>订单编号</th>
+                <th>日期</th>
+                <th>店铺</th>
+                <th>供应商</th>
+                <th class="num">金额</th>
+                <th class="ops">操作</th>
+              </tr>
+            </thead>
+            <tbody id="orderList"></tbody>
+          </table>
+        </div>
+        <p id="emptyHint" class="empty">暂无订单，请调整条件后查询</p>
       </div>
-      <p id="sumMeta" class="sum-meta" hidden></p>
-      <div id="resultTableWrap" class="result-table-wrap" hidden>
-        <table class="result-table" id="resultTable">
-          <thead>
-            <tr>
-              <th>订单编号</th>
-              <th>日期</th>
-              <th>店铺</th>
-              <th>供应商</th>
-              <th class="num">金额</th>
-              <th class="ops">操作</th>
-            </tr>
-          </thead>
-          <tbody id="orderList"></tbody>
-        </table>
-      </div>
-      <p id="emptyHint" class="empty">暂无订单，请调整条件后查询</p>
     </section>
 
     <section id="panelManage" class="panel tab-panel" role="tabpanel" hidden>
@@ -186,6 +189,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=20260806g"></script>
+  <script src="/static/app.js?v=20260808a"></script>
 </body>
 </html>

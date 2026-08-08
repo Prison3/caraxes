@@ -453,9 +453,14 @@
     }
   }
 
+  function recentLimit() {
+    // PC 展示更多，手机保持精简
+    return document.documentElement.classList.contains("is-pc") ? 50 : 10;
+  }
+
   async function loadRecentOrders() {
     try {
-      const res = await api("/api/orders?limit=10");
+      const res = await api(`/api/orders?limit=${recentLimit()}`);
       if (!res.ok) throw new Error(await parseError(res));
       renderRecentOrders(await res.json());
     } catch (err) {
@@ -465,6 +470,10 @@
       recentEmpty.textContent = err.message || "加载最近提交失败";
     }
   }
+
+  window.addEventListener("devicechange", () => {
+    if (!panelCreate.hidden) loadRecentOrders();
+  });
 
   function renderOrders(orders) {
     orderList.innerHTML = "";
