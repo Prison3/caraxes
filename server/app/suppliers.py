@@ -9,6 +9,7 @@ from pymongo.errors import DuplicateKeyError
 from .confirm import require_admin_confirm
 from .database import get_db, next_id
 from .models import Supplier, utcnow
+from .names import normalize_name
 from .schemas import NameCreate, SupplierOut
 
 router = APIRouter(prefix="/api/suppliers", tags=["suppliers"])
@@ -21,18 +22,29 @@ def list_suppliers(db: Database = Depends(get_db)):
 
 @router.post("", response_model=SupplierOut, status_code=status.HTTP_201_CREATED)
 def create_supplier(payload: NameCreate, db: Database = Depends(get_db)):
-    name = payload.name.strip()
+    name = " ".join(payload.name.strip().split())
     if not name:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="供应商名不能为空"
         )
-    doc = {"_id": next_id(db, "suppliers"), "name": name, "created_at": utcnow()}
+    name_key = normalize_name(name)
+    if db.suppliers.find_one({"$or": [{"name": name}, {"name_key": name_key}]}):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="供应商名不可以重复",
+        )
+    doc = {
+        "_id": next_id(db, "suppliers"),
+        "name": name,
+        "name_key": name_key,
+        "created_at": utcnow(),
+    }
     try:
         db.suppliers.insert_one(doc)
     except DuplicateKeyError:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="该供应商已存在",
+            detail="供应商名不可以重复",
         )
     return Supplier.from_doc(doc)
 

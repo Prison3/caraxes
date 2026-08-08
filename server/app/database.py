@@ -57,11 +57,24 @@ def next_order_no(db: Database, order_date=None) -> str:
     return f"{stamp}-{seq:02d}"
 
 
+def _backfill_name_keys(collection) -> None:
+    from .names import normalize_name
+
+    for doc in collection.find({"name": {"$type": "string"}}):
+        key = normalize_name(doc["name"])
+        if doc.get("name_key") != key:
+            collection.update_one({"_id": doc["_id"]}, {"$set": {"name_key": key}})
+
+
 def ensure_indexes() -> None:
     db = get_database()
     db.users.create_index("username", unique=True)
+    _backfill_name_keys(db.shops)
+    _backfill_name_keys(db.suppliers)
     db.shops.create_index("name", unique=True)
     db.suppliers.create_index("name", unique=True)
+    db.shops.create_index("name_key", unique=True)
+    db.suppliers.create_index("name_key", unique=True)
     # 允许同日同店同供应商多笔订单；去掉历史唯一索引
     try:
         db.supplier_orders.drop_index("uq_date_shop_supplier")

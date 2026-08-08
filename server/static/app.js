@@ -697,12 +697,28 @@
     }
   });
 
+  function normalizeName(name) {
+    return String(name || "")
+      .trim()
+      .replace(/\s+/g, " ")
+      .toLocaleLowerCase();
+  }
+
+  function nameExists(list, name) {
+    const key = normalizeName(name);
+    return list.some((item) => normalizeName(item.name) === key);
+  }
+
   shopForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     hideMsg(shopMsg);
-    const name = newShopName.value.trim();
+    const name = newShopName.value.trim().replace(/\s+/g, " ");
     if (!name) {
       showMsg(shopMsg, "请输入店铺名", false);
+      return;
+    }
+    if (nameExists(shops, name)) {
+      showMsg(shopMsg, "店铺名不可以重复", false);
       return;
     }
     const res = await api("/api/shops", {
@@ -722,9 +738,13 @@
   supplierForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     hideMsg(supplierMsg);
-    const name = newSupplierName.value.trim();
+    const name = newSupplierName.value.trim().replace(/\s+/g, " ");
     if (!name) {
       showMsg(supplierMsg, "请输入供应商名", false);
+      return;
+    }
+    if (nameExists(suppliers, name)) {
+      showMsg(supplierMsg, "供应商名不可以重复", false);
       return;
     }
     const res = await api("/api/suppliers", {

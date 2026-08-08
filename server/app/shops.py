@@ -9,6 +9,7 @@ from pymongo.errors import DuplicateKeyError
 from .confirm import require_admin_confirm
 from .database import get_db, next_id
 from .models import Shop, utcnow
+from .names import normalize_name
 from .schemas import NameCreate, ShopOut
 
 router = APIRouter(prefix="/api/shops", tags=["shops"])
@@ -21,16 +22,27 @@ def list_shops(db: Database = Depends(get_db)):
 
 @router.post("", response_model=ShopOut, status_code=status.HTTP_201_CREATED)
 def create_shop(payload: NameCreate, db: Database = Depends(get_db)):
-    name = payload.name.strip()
+    name = " ".join(payload.name.strip().split())
     if not name:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="店铺名不能为空")
-    doc = {"_id": next_id(db, "shops"), "name": name, "created_at": utcnow()}
+    name_key = normalize_name(name)
+    if db.shops.find_one({"$or": [{"name": name}, {"name_key": name_key}]}):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="店铺名不可以重复",
+        )
+    doc = {
+        "_id": next_id(db, "shops"),
+        "name": name,
+        "name_key": name_key,
+        "created_at": utcnow(),
+    }
     try:
         db.shops.insert_one(doc)
     except DuplicateKeyError:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="该店铺已存在",
+            detail="店铺名不可以重复",
         )
     return Shop.from_doc(doc)
 
