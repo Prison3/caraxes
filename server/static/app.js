@@ -173,17 +173,33 @@
       return;
     }
     for (const item of items) {
+      const disabled = Boolean(item.disabled);
       const row = document.createElement("div");
-      row.className = "manager-row";
+      row.className = "manager-row" + (disabled ? " is-disabled" : "");
       row.innerHTML = `
         <div class="meta">
           <span class="name"></span>
           <span class="shop"></span>
         </div>
-        <button type="button" class="delete-btn">删除</button>
+        <div class="manager-actions">
+          <button type="button" class="toggle-btn"></button>
+          <button type="button" class="delete-btn">删除</button>
+        </div>
       `;
-      row.querySelector(".name").textContent = item.username;
+      const nameEl = row.querySelector(".name");
+      nameEl.textContent = item.username;
+      if (disabled) {
+        const badge = document.createElement("span");
+        badge.className = "disabled-badge";
+        badge.textContent = "已禁用";
+        nameEl.appendChild(document.createTextNode(" "));
+        nameEl.appendChild(badge);
+      }
       row.querySelector(".shop").textContent = `店铺：${item.shop_name || "-"}`;
+      const toggleBtn = row.querySelector(".toggle-btn");
+      toggleBtn.textContent = disabled ? "启用" : "禁用";
+      toggleBtn.classList.toggle("is-enable", disabled);
+      toggleBtn.addEventListener("click", () => toggleManagerDisabled(item));
       row.querySelector(".delete-btn").addEventListener("click", () => deleteManager(item));
       managerManageList.appendChild(row);
     }
@@ -207,6 +223,30 @@
         valueKey: "id",
       });
     }
+  }
+
+  async function toggleManagerDisabled(item) {
+    const willDisable = !item.disabled;
+    const action = willDisable ? "禁用" : "启用";
+    const ok = await openModal({
+      title: `${action}店长`,
+      text: `确认${action}店长「${item.username}」？`,
+      yesText: `确定${action}`,
+      noText: "取消",
+      danger: willDisable,
+    });
+    if (!ok) return;
+    const res = await api(`/api/users/${item.id}/disabled`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ disabled: willDisable }),
+    });
+    if (!res.ok) {
+      showMsg(managerMsg, await parseError(res), false);
+      return;
+    }
+    showMsg(managerMsg, `店长已${action}`, true);
+    await loadManagers();
   }
 
   async function deleteManager(item) {

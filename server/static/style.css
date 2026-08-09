@@ -1305,6 +1305,54 @@ html.is-mobile .orders-readable {
   color: var(--muted, #6b7280);
 }
 
+.manager-row.is-disabled {
+  opacity: 0.72;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.manager-row .disabled-badge {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 999px;
+  background: rgba(185, 28, 28, 0.12);
+  color: var(--danger, #b91c1c);
+  font-size: 0.7rem;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.manager-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.manager-row .toggle-btn {
+  border: 0;
+  background: transparent;
+  color: var(--accent, #2563eb);
+  font-size: var(--fs-xs, 0.75rem);
+  cursor: pointer;
+  padding: 0.2rem 0.3rem;
+  min-height: 32px;
+}
+
+.manager-row .toggle-btn.is-enable {
+  color: #15803d;
+}
+
+.manager-row .delete-btn {
+  border: 0;
+  background: transparent;
+  color: var(--danger);
+  font-size: var(--fs-xs, 0.75rem);
+  cursor: pointer;
+  padding: 0.2rem 0.3rem;
+  min-height: 32px;
+}
+
 .choice-field.is-locked .chip:not(.active) {
   opacity: 0.45;
   pointer-events: none;

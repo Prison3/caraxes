@@ -62,6 +62,12 @@ def require_user(request: Request, db: Database = Depends(get_db)) -> User:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="未登录",
         )
+    if doc.get("disabled"):
+        request.session.clear()
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="账号已被禁用",
+        )
     return user_from_doc(db, doc)
 
 
@@ -73,6 +79,11 @@ def login(payload: LoginIn, request: Request, db: Database = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="用户名或密码错误",
+        )
+    if doc.get("disabled"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="账号已被禁用",
         )
     user = user_from_doc(db, doc)
     request.session[SESSION_KEY] = user.id

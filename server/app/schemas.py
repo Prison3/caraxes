@@ -55,12 +55,17 @@ class UserOut(BaseModel):
     role: str = "admin"
     shop_id: Optional[int] = None
     shop_name: Optional[str] = None
+    disabled: bool = False
 
 
 class ManagerCreate(BaseModel):
     username: str = Field(..., min_length=1, max_length=64, description="店长用户名")
     password: str = Field(..., min_length=4, max_length=128, description="登录密码")
     shop_id: int = Field(..., gt=0, description="绑定店铺 ID")
+
+
+class ManagerDisabledIn(BaseModel):
+    disabled: bool = Field(..., description="是否禁用")
 
 
 class ManagerOut(BaseModel):
@@ -71,6 +76,7 @@ class ManagerOut(BaseModel):
     role: str
     shop_id: Optional[int]
     shop_name: Optional[str]
+    disabled: bool = False
     created_at: datetime
 
 

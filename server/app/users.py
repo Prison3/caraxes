@@ -12,9 +12,22 @@ from .confirm import require_admin_confirm
 from .database import get_db, next_id
 from .models import ROLE_MANAGER, User, utcnow
 from .roles import require_admin
-from .schemas import ManagerCreate, ManagerOut
+from .schemas import ManagerCreate, ManagerDisabledIn, ManagerOut
 
 router = APIRouter(prefix="/api/users", tags=["users"])
+
+
+def _require_manager_doc(db: Database, user_id: int):
+    doc = db.users.find_one({"_id": user_id})
+    if doc is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
+    user = User.from_doc(doc)
+    if user.role != ROLE_MANAGER:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="只能操作店长账号",
+        )
+    return doc
 
 
 @router.get("", response_model=List[ManagerOut])
@@ -46,6 +59,7 @@ def create_manager(
         "role": ROLE_MANAGER,
         "shop_id": int(shop["_id"]),
         "shop_name": shop["name"],
+        "disabled": False,
         "created_at": utcnow(),
     }
     try:
@@ -55,6 +69,22 @@ def create_manager(
     return user_from_doc(db, doc)
 
 
+@router.put("/{user_id}/disabled", response_model=ManagerOut)
+def set_manager_disabled(
+    user_id: int,
+    payload: ManagerDisabledIn,
+    db: Database = Depends(get_db),
+    _: User = Depends(require_admin),
+):
+    _require_manager_doc(db, user_id)
+    db.users.update_one(
+        {"_id": user_id},
+        {"$set": {"disabled": bool(payload.disabled)}},
+    )
+    updated = db.users.find_one({"_id": user_id})
+    return user_from_doc(db, updated)
+
+
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_manager(
     user_id: int,
@@ -62,13 +92,5 @@ def delete_manager(
     _: User = Depends(require_admin),
     __: None = Depends(require_admin_confirm),
 ):
-    doc = db.users.find_one({"_id": user_id})
-    if doc is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
-    user = User.from_doc(doc)
-    if user.role != ROLE_MANAGER:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="只能删除店长账号",
-        )
+    _require_manager_doc(db, user_id)
     db.users.delete_one({"_id": user_id})

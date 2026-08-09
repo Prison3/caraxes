@@ -35,6 +35,7 @@ class User:
     role: str
     shop_id: Optional[int]
     shop_name: Optional[str]
+    disabled: bool
     created_at: datetime
 
     @classmethod
@@ -57,6 +58,7 @@ class User:
             role=role,
             shop_id=shop_id,
             shop_name=str(resolved_name).strip() if resolved_name else None,
+            disabled=bool(doc.get("disabled", False)),
             created_at=doc["created_at"],
         )
 

@@ -19,6 +19,10 @@ def _ensure_admin_roles(db) -> None:
         {"role": ROLE_ADMIN},
         {"$set": {"shop_id": None}},
     )
+    db.users.update_many(
+        {"disabled": {"$exists": False}},
+        {"$set": {"disabled": False}},
+    )
 
 
 def _seed_managers_for_shops(db, now) -> None:
@@ -39,6 +43,7 @@ def _seed_managers_for_shops(db, now) -> None:
                 "role": ROLE_MANAGER,
                 "shop_id": shop_id,
                 "shop_name": shop_name,
+                "disabled": False,
                 "created_at": now,
             }
         )
