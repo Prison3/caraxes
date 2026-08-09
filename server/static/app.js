@@ -68,6 +68,7 @@
   const deletionTableWrap = document.getElementById("deletionTableWrap");
   const deletionEmpty = document.getElementById("deletionEmpty");
   const deletionMeta = document.getElementById("deletionMeta");
+  const clearDeletionsBtn = document.getElementById("clearDeletionsBtn");
 
   const dupModal = document.getElementById("dupModal");
   const dupTitle = document.getElementById("dupTitle");
@@ -702,16 +703,23 @@
     deletionEmpty.textContent = "暂无删除记录";
     deletionTableWrap.hidden = !hasItems;
     deletionMeta.textContent = hasItems ? `最近 ${items.length} 条` : "";
+    if (clearDeletionsBtn) clearDeletionsBtn.hidden = !hasItems;
 
     for (const item of items) {
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td class="col-date"></td>
         <td class="col-kind"></td>
+        <td class="col-operator"></td>
         <td class="col-summary"></td>
       `;
       tr.querySelector(".col-date").textContent = formatDeletedAt(item.deleted_at);
       tr.querySelector(".col-kind").textContent = item.kind_label || item.kind || "";
+      const operator = item.operator_username || "—";
+      const roleLabel = item.operator_role_label || "";
+      tr.querySelector(".col-operator").textContent = roleLabel
+        ? `${operator}（${roleLabel}）`
+        : operator;
       tr.querySelector(".col-summary").textContent = item.summary || "";
       deletionList.appendChild(tr);
     }
@@ -728,6 +736,30 @@
       deletionEmpty.hidden = false;
       deletionEmpty.textContent = err.message || "加载删除记录失败";
     }
+  }
+
+  async function clearAllDeletions() {
+    if (!isAdmin()) return;
+    const password = await confirmDelete("确认清空全部最近删除记录？此操作不可恢复。");
+    if (!password) return;
+    const res = await api("/api/deletions", {
+      method: "DELETE",
+      headers: adminConfirmHeaders(password),
+    });
+    if (!res.ok && res.status !== 204) {
+      showMsg(shopMsg, await parseError(res), false);
+      return;
+    }
+    showMsg(shopMsg, "最近删除记录已清空", true);
+    await loadDeletions();
+  }
+
+  if (clearDeletionsBtn) {
+    clearDeletionsBtn.addEventListener("click", () => {
+      clearAllDeletions().catch((err) => {
+        showMsg(shopMsg, err.message || "清空失败", false);
+      });
+    });
   }
 
   async function loadCatalog() {

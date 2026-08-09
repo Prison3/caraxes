@@ -262,5 +262,5 @@ def delete_order(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="订单不存在")
     order = _order_out(db, doc)
     _ensure_order_access(user, order.shop_id)
-    record_order_deletion(db, order)
+    record_order_deletion(db, order, operator=user)
     db.supplier_orders.delete_one({"_id": order_id})

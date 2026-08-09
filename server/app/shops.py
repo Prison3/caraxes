@@ -118,8 +118,8 @@ def update_shop(
 def delete_shop(
     shop_id: int,
     db: Database = Depends(get_db),
-    _: User = Depends(require_admin),
-    __: None = Depends(require_admin_confirm),
+    user: User = Depends(require_admin),
+    _: None = Depends(require_admin_confirm),
 ):
     doc = db.shops.find_one({"_id": shop_id})
     if doc is None:
@@ -136,5 +136,5 @@ def delete_shop(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"该店铺还有 {manager_count} 个店长账号，无法删除",
         )
-    record_shop_deletion(db, shop_id, doc["name"])
+    record_shop_deletion(db, shop_id, doc["name"], operator=user)
     db.shops.delete_one({"_id": shop_id})

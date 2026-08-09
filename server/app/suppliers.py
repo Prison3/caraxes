@@ -107,8 +107,8 @@ def update_supplier(
 def delete_supplier(
     supplier_id: int,
     db: Database = Depends(get_db),
-    _: User = Depends(require_admin),
-    __: None = Depends(require_admin_confirm),
+    user: User = Depends(require_admin),
+    _: None = Depends(require_admin_confirm),
 ):
     doc = db.suppliers.find_one({"_id": supplier_id})
     if doc is None:
@@ -119,5 +119,5 @@ def delete_supplier(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"该供应商还有 {order_count} 笔订单，无法删除",
         )
-    record_supplier_deletion(db, supplier_id, doc["name"])
+    record_supplier_deletion(db, supplier_id, doc["name"], operator=user)
     db.suppliers.delete_one({"_id": supplier_id})
