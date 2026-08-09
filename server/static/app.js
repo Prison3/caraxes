@@ -81,7 +81,18 @@
   const dupPasswordError = document.getElementById("dupPasswordError");
   const currentUser = document.getElementById("currentUser");
   const currentRole = document.getElementById("currentRole");
+  const changePasswordBtn = document.getElementById("changePasswordBtn");
   const logoutBtn = document.getElementById("logoutBtn");
+
+  const passwordModal = document.getElementById("passwordModal");
+  const passwordBackdrop = document.getElementById("passwordBackdrop");
+  const passwordForm = document.getElementById("passwordForm");
+  const oldPassword = document.getElementById("oldPassword");
+  const newPassword = document.getElementById("newPassword");
+  const confirmPassword = document.getElementById("confirmPassword");
+  const passwordMsg = document.getElementById("passwordMsg");
+  const passwordSave = document.getElementById("passwordSave");
+  const passwordCancel = document.getElementById("passwordCancel");
   const recentList = document.getElementById("recentList");
   const recentTableWrap = document.getElementById("recentTableWrap");
   const recentEmpty = document.getElementById("recentEmpty");
@@ -1400,6 +1411,86 @@
     rangeAnchor = null;
     setCalOpen(false);
     queryOrders();
+  });
+
+  function openPasswordModal() {
+    if (!passwordModal) return;
+    hideMsg(passwordMsg);
+    oldPassword.value = "";
+    newPassword.value = "";
+    confirmPassword.value = "";
+    passwordModal.hidden = false;
+    setTimeout(() => oldPassword.focus(), 30);
+  }
+
+  function closePasswordModal() {
+    if (!passwordModal) return;
+    passwordModal.hidden = true;
+    hideMsg(passwordMsg);
+    oldPassword.value = "";
+    newPassword.value = "";
+    confirmPassword.value = "";
+    if (passwordSave) passwordSave.disabled = false;
+  }
+
+  if (changePasswordBtn) {
+    changePasswordBtn.addEventListener("click", openPasswordModal);
+  }
+  if (passwordCancel) {
+    passwordCancel.addEventListener("click", closePasswordModal);
+  }
+  if (passwordBackdrop) {
+    passwordBackdrop.addEventListener("click", closePasswordModal);
+  }
+  if (passwordForm) {
+    passwordForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      hideMsg(passwordMsg);
+      const oldPwd = oldPassword.value;
+      const newPwd = newPassword.value;
+      const confirmPwd = confirmPassword.value;
+      if (!oldPwd) {
+        showMsg(passwordMsg, "请输入当前密码", false);
+        return;
+      }
+      if (!newPwd || newPwd.length < 4) {
+        showMsg(passwordMsg, "新密码至少 4 位", false);
+        return;
+      }
+      if (newPwd !== confirmPwd) {
+        showMsg(passwordMsg, "两次输入的新密码不一致", false);
+        return;
+      }
+      if (newPwd === oldPwd) {
+        showMsg(passwordMsg, "新密码不能与当前密码相同", false);
+        return;
+      }
+      passwordSave.disabled = true;
+      try {
+        const res = await api("/api/auth/password", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            old_password: oldPwd,
+            new_password: newPwd,
+          }),
+        });
+        if (!res.ok && res.status !== 204) {
+          throw new Error(await parseError(res));
+        }
+        closePasswordModal();
+        showMsg(formMsg, "密码已修改，下次请用新密码登录", true);
+      } catch (err) {
+        showMsg(passwordMsg, err.message || "修改失败", false);
+      } finally {
+        passwordSave.disabled = false;
+      }
+    });
+  }
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && passwordModal && !passwordModal.hidden) {
+      closePasswordModal();
+    }
   });
 
   logoutBtn.addEventListener("click", async () => {

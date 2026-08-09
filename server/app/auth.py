@@ -11,7 +11,7 @@ from pymongo.database import Database
 from .catalog import user_from_doc
 from .database import get_db
 from .models import User
-from .schemas import LoginIn, UserOut
+from .schemas import LoginIn, PasswordChangeIn, UserOut
 
 PBKDF2_ITERATIONS = 120_000
 SESSION_KEY = "user_id"
@@ -87,3 +87,32 @@ def logout(request: Request):
 @router.get("/me", response_model=UserOut)
 def me(user: User = Depends(require_user)):
     return user
+
+
+@router.put("/password", status_code=status.HTTP_204_NO_CONTENT)
+def change_password(
+    payload: PasswordChangeIn,
+    user: User = Depends(require_user),
+    db: Database = Depends(get_db),
+):
+    doc = db.users.find_one({"_id": user.id})
+    if doc is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="未登录",
+        )
+    if not verify_password(payload.old_password, doc["password_hash"]):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="当前密码错误",
+        )
+    new_password = payload.new_password
+    if new_password == payload.old_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="新密码不能与当前密码相同",
+        )
+    db.users.update_one(
+        {"_id": user.id},
+        {"$set": {"password_hash": hash_password(new_password)}},
+    )

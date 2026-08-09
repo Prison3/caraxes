@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>供应商管理系统</title>
   <script src="/static/device.js?v=2"></script>
-  <link rel="stylesheet" href="/static/style.css?v=20260809i" />
+  <link rel="stylesheet" href="/static/style.css?v=20260809j" />
 </head>
 <body>
   <header class="topbar">
@@ -13,6 +13,7 @@
     <div class="topbar-user">
       <span id="currentUser" class="uname"></span>
       <span id="currentRole" class="urole" hidden></span>
+      <button type="button" id="changePasswordBtn" class="logout-btn">修改密码</button>
       <button type="button" id="logoutBtn" class="logout-btn">退出</button>
     </div>
   </header>
@@ -241,6 +242,32 @@
     </div>
   </div>
 
+  <div id="passwordModal" class="modal" hidden>
+    <div class="modal-backdrop" id="passwordBackdrop"></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="passwordTitle">
+      <h3 id="passwordTitle">修改登录密码</h3>
+      <form id="passwordForm" class="password-form">
+        <label>
+          当前密码
+          <input type="password" id="oldPassword" autocomplete="current-password" required />
+        </label>
+        <label>
+          新密码
+          <input type="password" id="newPassword" autocomplete="new-password" minlength="4" maxlength="128" required />
+        </label>
+        <label>
+          确认新密码
+          <input type="password" id="confirmPassword" autocomplete="new-password" minlength="4" maxlength="128" required />
+        </label>
+        <p id="passwordMsg" class="msg" hidden></p>
+        <div class="modal-actions">
+          <button type="submit" id="passwordSave">保存</button>
+          <button type="button" id="passwordCancel" class="btn-secondary">取消</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div id="editOrderModal" class="modal" hidden>
     <div class="modal-backdrop" id="editOrderBackdrop"></div>
     <div class="modal-card edit-order-card" role="dialog" aria-modal="true" aria-labelledby="editOrderTitle">
@@ -274,6 +301,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=20260809i"></script>
+  <script src="/static/app.js?v=20260809j"></script>
 </body>
 </html>

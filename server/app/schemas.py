@@ -42,6 +42,11 @@ class LoginIn(BaseModel):
     password: str = Field(..., min_length=1, max_length=128, description="密码")
 
 
+class PasswordChangeIn(BaseModel):
+    old_password: str = Field(..., min_length=1, max_length=128, description="当前密码")
+    new_password: str = Field(..., min_length=4, max_length=128, description="新密码")
+
+
 class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
