@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>供应商管理系统</title>
   <script src="/static/device.js?v=2"></script>
-  <link rel="stylesheet" href="/static/style.css?v=20260809h" />
+  <link rel="stylesheet" href="/static/style.css?v=20260809i" />
 </head>
 <body>
   <header class="topbar">
@@ -241,6 +241,39 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=20260809h"></script>
+  <div id="editOrderModal" class="modal" hidden>
+    <div class="modal-backdrop" id="editOrderBackdrop"></div>
+    <div class="modal-card edit-order-card" role="dialog" aria-modal="true" aria-labelledby="editOrderTitle">
+      <h3 id="editOrderTitle">修改订单</h3>
+      <p id="editOrderMeta" class="edit-order-meta"></p>
+      <form id="editOrderForm" class="edit-order-form">
+        <label>
+          日期
+          <input type="date" id="editOrderDate" required />
+        </label>
+        <div class="choice-field">
+          <span class="choice-label">店铺名</span>
+          <input type="hidden" id="editShopId" value="" />
+          <div id="editShopPicker" class="chip-grid" role="listbox" aria-label="选择店铺"></div>
+        </div>
+        <div class="choice-field">
+          <span class="choice-label">供应商名</span>
+          <input type="hidden" id="editSupplierId" value="" />
+          <div id="editSupplierPicker" class="chip-grid" role="listbox" aria-label="选择供应商"></div>
+        </div>
+        <label>
+          单日总金额
+          <input type="number" id="editDailyTotal" min="0.01" step="0.01" required />
+        </label>
+        <p id="editOrderMsg" class="msg" hidden></p>
+        <div class="modal-actions">
+          <button type="submit" id="editOrderSave">保存</button>
+          <button type="button" id="editOrderCancel" class="btn-secondary">取消</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/static/app.js?v=20260809i"></script>
 </body>
 </html>

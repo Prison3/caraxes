@@ -836,15 +836,150 @@
     }
   }
 
+  function canEditOrders() {
+    return isAdmin() || isManager();
+  }
+
   function canDeleteOrders() {
     return isAdmin() || isManager();
   }
 
+  const editOrderModal = document.getElementById("editOrderModal");
+  const editOrderBackdrop = document.getElementById("editOrderBackdrop");
+  const editOrderForm = document.getElementById("editOrderForm");
+  const editOrderTitle = document.getElementById("editOrderTitle");
+  const editOrderMeta = document.getElementById("editOrderMeta");
+  const editOrderDate = document.getElementById("editOrderDate");
+  const editShopId = document.getElementById("editShopId");
+  const editShopPicker = document.getElementById("editShopPicker");
+  const editSupplierId = document.getElementById("editSupplierId");
+  const editSupplierPicker = document.getElementById("editSupplierPicker");
+  const editDailyTotal = document.getElementById("editDailyTotal");
+  const editOrderMsg = document.getElementById("editOrderMsg");
+  const editOrderSave = document.getElementById("editOrderSave");
+  const editOrderCancel = document.getElementById("editOrderCancel");
+  let editingOrderId = null;
+
+  function closeEditOrderModal() {
+    if (!editOrderModal) return;
+    editOrderModal.hidden = true;
+    editingOrderId = null;
+    hideMsg(editOrderMsg);
+    if (editOrderSave) editOrderSave.disabled = false;
+  }
+
+  function openEditOrderModal(order) {
+    if (!editOrderModal || !canEditOrders()) return;
+    editingOrderId = order.id;
+    hideMsg(editOrderMsg);
+    editOrderTitle.textContent = "修改订单";
+    editOrderMeta.textContent = `编号：${order.order_no || order.id}`;
+    editOrderDate.value = order.order_date || "";
+    editShopId.value = order.shop_id ? String(order.shop_id) : "";
+    editSupplierId.value = order.supplier_id ? String(order.supplier_id) : "";
+    editDailyTotal.value = order.daily_total != null ? String(order.daily_total) : "";
+
+    if (isManager() && managerShopId()) {
+      editShopId.value = managerShopId();
+    }
+
+    renderChipPicker(editShopPicker, editShopId, shops, {
+      allowEmpty: false,
+      emptyHint: "暂无店铺",
+      keepValue: true,
+      valueKey: "id",
+    });
+    renderChipPicker(editSupplierPicker, editSupplierId, suppliers, {
+      allowEmpty: false,
+      emptyHint: "暂无供应商",
+      keepValue: true,
+      valueKey: "id",
+    });
+
+    const shopField = editShopPicker?.closest(".choice-field");
+    if (shopField) {
+      shopField.classList.toggle("is-locked", isManager());
+    }
+
+    editOrderModal.hidden = false;
+    setTimeout(() => editDailyTotal?.focus(), 30);
+  }
+
+  async function saveEditOrder(e) {
+    e.preventDefault();
+    if (!editingOrderId) return;
+    hideMsg(editOrderMsg);
+
+    if (isManager() && managerShopId()) {
+      editShopId.value = managerShopId();
+    }
+
+    const payload = {
+      order_date: editOrderDate.value,
+      shop_id: Number(editShopId.value),
+      supplier_id: Number(editSupplierId.value),
+      daily_total: Number(editDailyTotal.value),
+    };
+
+    if (!payload.order_date) {
+      showMsg(editOrderMsg, "请选择日期", false);
+      return;
+    }
+    if (!payload.shop_id || !payload.supplier_id) {
+      showMsg(editOrderMsg, "请选择店铺和供应商", false);
+      return;
+    }
+    if (!(payload.daily_total > 0)) {
+      showMsg(editOrderMsg, "单日总金额必须大于 0", false);
+      return;
+    }
+
+    editOrderSave.disabled = true;
+    try {
+      const res = await api(`/api/orders/${editingOrderId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(await parseError(res));
+      closeEditOrderModal();
+      const msgEl = panelCreate.hidden ? queryMsg : formMsg;
+      showMsg(msgEl, "订单已更新", true);
+      await loadRecentOrders();
+      if (!panelQuery.hidden) await queryOrders();
+    } catch (err) {
+      showMsg(editOrderMsg, err.message || "保存失败", false);
+    } finally {
+      editOrderSave.disabled = false;
+    }
+  }
+
+  if (editOrderForm) {
+    editOrderForm.addEventListener("submit", saveEditOrder);
+  }
+  if (editOrderCancel) {
+    editOrderCancel.addEventListener("click", closeEditOrderModal);
+  }
+  if (editOrderBackdrop) {
+    editOrderBackdrop.addEventListener("click", closeEditOrderModal);
+  }
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && editOrderModal && !editOrderModal.hidden) {
+      closeEditOrderModal();
+    }
+  });
+
   function appendOrderRow(tbody, order) {
     const tr = document.createElement("tr");
-    const opsHtml = canDeleteOrders()
-      ? `<td class="ops"><button type="button" class="delete-btn">删除</button></td>`
-      : `<td class="ops ops-empty">—</td>`;
+    const canEdit = canEditOrders();
+    const canDelete = canDeleteOrders();
+    let opsHtml = `<td class="ops ops-empty">—</td>`;
+    if (canEdit || canDelete) {
+      opsHtml = `<td class="ops">`;
+      if (canEdit) opsHtml += `<button type="button" class="edit-btn">修改</button>`;
+      if (canDelete) opsHtml += `<button type="button" class="delete-btn">删除</button>`;
+      opsHtml += `</td>`;
+    }
     tr.innerHTML = `
       <td class="col-no"></td>
       <td class="col-date"></td>
@@ -858,6 +993,10 @@
     tr.querySelector(".col-shop").textContent = order.shop_name;
     tr.querySelector(".col-supplier").textContent = order.supplier_name;
     tr.querySelector(".col-amount").textContent = `¥${formatMoney(order.daily_total)}`;
+    const editBtn = tr.querySelector(".edit-btn");
+    if (editBtn) {
+      editBtn.addEventListener("click", () => openEditOrderModal(order));
+    }
     const deleteBtn = tr.querySelector(".delete-btn");
     if (deleteBtn) {
       deleteBtn.addEventListener("click", () => deleteOrder(order.id));
