@@ -37,7 +37,7 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=get_session_secret(),
     session_cookie="caraxes_session",
-    max_age=60 * 60 * 24 * 7,
+    max_age=45 * 60,
     same_site="lax",
     https_only=False,
 )

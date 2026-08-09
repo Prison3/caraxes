@@ -4,6 +4,7 @@ import hashlib
 import hmac
 import os
 import secrets
+import time
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pymongo.database import Database
@@ -15,6 +16,8 @@ from .schemas import LoginIn, PasswordChangeIn, UserOut
 
 PBKDF2_ITERATIONS = 120_000
 SESSION_KEY = "user_id"
+SESSION_LOGIN_AT = "login_at"
+SESSION_MAX_AGE = 45 * 60
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -55,6 +58,13 @@ def require_user(request: Request, db: Database = Depends(get_db)) -> User:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="未登录",
         )
+    login_at = request.session.get(SESSION_LOGIN_AT)
+    if not isinstance(login_at, (int, float)) or time.time() - login_at > SESSION_MAX_AGE:
+        request.session.clear()
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="登录已过期，请重新登录",
+        )
     doc = db.users.find_one({"_id": int(user_id)})
     if doc is None:
         request.session.clear()
@@ -86,7 +96,9 @@ def login(payload: LoginIn, request: Request, db: Database = Depends(get_db)):
             detail="账号已被禁用",
         )
     user = user_from_doc(db, doc)
+    request.session.clear()
     request.session[SESSION_KEY] = user.id
+    request.session[SESSION_LOGIN_AT] = time.time()
     return user
 
 
