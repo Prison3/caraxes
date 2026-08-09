@@ -3,7 +3,7 @@
   const orderDate = document.getElementById("orderDate");
   const shopName = document.getElementById("shopName");
   const shopPicker = document.getElementById("shopPicker");
-  const supplierName = document.getElementById("supplierName");
+  const supplierId = document.getElementById("supplierId");
   const supplierPicker = document.getElementById("supplierPicker");
   const dailyTotal = document.getElementById("dailyTotal");
   const submitBtn = document.getElementById("submitBtn");
@@ -22,7 +22,7 @@
   const calClear = document.getElementById("calClear");
   const queryShop = document.getElementById("queryShop");
   const queryShopPicker = document.getElementById("queryShopPicker");
-  const querySupplier = document.getElementById("querySupplier");
+  const querySupplierId = document.getElementById("querySupplierId");
   const querySupplierPicker = document.getElementById("querySupplierPicker");
   const queryBtn = document.getElementById("queryBtn");
   const resetQueryBtn = document.getElementById("resetQueryBtn");
@@ -74,6 +74,8 @@
   const dupText = document.getElementById("dupText");
   const dupYes = document.getElementById("dupYes");
   const dupNo = document.getElementById("dupNo");
+  const dupNameWrap = document.getElementById("dupNameWrap");
+  const dupName = document.getElementById("dupName");
   const dupPasswordWrap = document.getElementById("dupPasswordWrap");
   const dupPassword = document.getElementById("dupPassword");
   const dupPasswordError = document.getElementById("dupPasswordError");
@@ -89,6 +91,7 @@
 
   let dupResolve = null;
   let dupRequirePassword = false;
+  let dupRequireName = false;
   let shops = [];
   let suppliers = [];
   let managers = [];
@@ -428,6 +431,8 @@
     noText,
     danger = false,
     requirePassword = false,
+    requireName = false,
+    defaultName = "",
   }) {
     dupTitle.textContent = title;
     dupText.textContent = text;
@@ -436,12 +441,20 @@
     dupYes.className = danger ? "btn-danger" : "btn-primary";
     dupNo.className = "btn-secondary";
     dupRequirePassword = !!requirePassword;
+    dupRequireName = !!requireName;
     dupPasswordWrap.hidden = !dupRequirePassword;
+    if (dupNameWrap) dupNameWrap.hidden = !dupRequireName;
     dupPasswordError.hidden = true;
     dupPasswordError.textContent = "";
     dupPassword.value = "";
+    if (dupName) dupName.value = defaultName || "";
     dupModal.hidden = false;
-    if (dupRequirePassword) {
+    if (dupRequireName && dupName) {
+      setTimeout(() => {
+        dupName.focus();
+        dupName.select();
+      }, 30);
+    } else if (dupRequirePassword) {
       setTimeout(() => dupPassword.focus(), 30);
     }
     return new Promise((resolve) => {
@@ -451,7 +464,16 @@
 
   function closeModal(result) {
     let resolveValue = result;
-    if (result && dupRequirePassword) {
+    if (result && dupRequireName) {
+      const name = (dupName?.value || "").trim().replace(/\s+/g, " ");
+      if (!name) {
+        dupPasswordError.hidden = false;
+        dupPasswordError.textContent = "请输入名称";
+        dupName?.focus();
+        return;
+      }
+      resolveValue = name;
+    } else if (result && dupRequirePassword) {
       const pwd = dupPassword.value;
       if (!pwd) {
         dupPasswordError.hidden = false;
@@ -463,8 +485,11 @@
     }
     dupModal.hidden = true;
     dupRequirePassword = false;
+    dupRequireName = false;
     dupPasswordWrap.hidden = true;
+    if (dupNameWrap) dupNameWrap.hidden = true;
     dupPassword.value = "";
+    if (dupName) dupName.value = "";
     dupPasswordError.hidden = true;
     if (dupResolve) {
       const resolve = dupResolve;
@@ -484,6 +509,17 @@
     });
   }
 
+  async function promptRename(oldName) {
+    return openModal({
+      title: "修改供应商名称",
+      text: `当前名称：${oldName}`,
+      yesText: "保存",
+      noText: "取消",
+      requireName: true,
+      defaultName: oldName,
+    });
+  }
+
   function adminConfirmHeaders(password, extra = {}) {
     return {
       ...extra,
@@ -500,6 +536,14 @@
       closeModal(true);
     }
   });
+  if (dupName) {
+    dupName.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        closeModal(true);
+      }
+    });
+  }
 
   async function parseError(res) {
     try {
@@ -520,9 +564,11 @@
       emptyLabel = "全部",
       emptyHint = "暂无选项，请先在管理页添加",
       keepValue = true,
+      valueKey = "name",
     } = options;
-    let selected = keepValue ? hiddenInput.value : "";
-    if (selected && !items.some((x) => x.name === selected)) {
+    const itemValue = (item) => String(item[valueKey]);
+    let selected = keepValue ? String(hiddenInput.value || "") : "";
+    if (selected && !items.some((x) => itemValue(x) === selected)) {
       selected = "";
       hiddenInput.value = "";
     }
@@ -545,7 +591,7 @@
 
     if (allowEmpty) addChip("", emptyLabel);
     for (const item of items) {
-      addChip(item.name, item.name);
+      addChip(itemValue(item), item.name);
     }
     if (!items.length && !allowEmpty) {
       const empty = document.createElement("p");
@@ -555,7 +601,7 @@
     }
   }
 
-  function renderManageGrid(container, items, onDelete, emptyText = "暂无数据") {
+  function renderManageGrid(container, items, onDelete, emptyText = "暂无数据", onRename = null) {
     container.innerHTML = "";
     if (!items.length) {
       const empty = document.createElement("p");
@@ -567,9 +613,15 @@
     for (const item of items) {
       const cell = document.createElement("div");
       cell.className = "manage-chip";
-      cell.innerHTML = `<span class="name"></span><button type="button" class="delete-btn">删除</button>`;
+      const actions = onRename
+        ? `<div class="manage-actions"><button type="button" class="rename-btn">改名</button><button type="button" class="delete-btn">删除</button></div>`
+        : `<button type="button" class="delete-btn">删除</button>`;
+      cell.innerHTML = `<span class="name"></span>${actions}`;
       cell.querySelector(".name").textContent = item.name;
       cell.querySelector(".delete-btn").addEventListener("click", () => onDelete(item));
+      if (onRename) {
+        cell.querySelector(".rename-btn").addEventListener("click", () => onRename(item));
+      }
       container.appendChild(cell);
     }
   }
@@ -640,28 +692,60 @@
       emptyHint: "暂无店铺，请先在管理页添加",
       keepValue: true,
     });
-    renderChipPicker(supplierPicker, supplierName, suppliers, {
+    renderChipPicker(supplierPicker, supplierId, suppliers, {
       allowEmpty: false,
       emptyHint: "暂无供应商，请先在管理页添加",
       keepValue: true,
+      valueKey: "id",
     });
     renderChipPicker(queryShopPicker, queryShop, shops, {
       allowEmpty: !isManager(),
       emptyLabel: "全部店铺",
       keepValue: true,
     });
-    renderChipPicker(querySupplierPicker, querySupplier, suppliers, {
+    renderChipPicker(querySupplierPicker, querySupplierId, suppliers, {
       allowEmpty: true,
       emptyLabel: "全部供应商",
       keepValue: true,
+      valueKey: "id",
     });
     lockShopPickers();
 
     if (isAdmin()) {
       renderManageGrid(shopManageList, shops, deleteShop, "暂无店铺");
-      renderManageGrid(supplierManageList, suppliers, deleteSupplier, "暂无供应商");
+      renderManageGrid(
+        supplierManageList,
+        suppliers,
+        deleteSupplier,
+        "暂无供应商",
+        renameSupplier
+      );
       await Promise.all([loadManagers(), loadDeletions()]);
     }
+  }
+
+  async function renameSupplier(item) {
+    const name = await promptRename(item.name);
+    if (!name) return;
+    if (name === item.name) {
+      showMsg(supplierMsg, "名称未变化", true);
+      return;
+    }
+    if (nameExists(suppliers, name)) {
+      showMsg(supplierMsg, "供应商名不可以重复", false);
+      return;
+    }
+    const res = await api(`/api/suppliers/${item.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) {
+      showMsg(supplierMsg, await parseError(res), false);
+      return;
+    }
+    showMsg(supplierMsg, "供应商名称已更新", true);
+    await loadCatalog();
   }
 
   async function deleteShop(item) {
@@ -812,7 +896,7 @@
       params.set(key, value);
     });
     if (queryShop.value) params.set("shop_name", queryShop.value);
-    if (querySupplier.value) params.set("supplier_name", querySupplier.value);
+    if (querySupplierId.value) params.set("supplier_id", querySupplierId.value);
 
     listMeta.textContent = "加载中…";
     queryBtn.disabled = true;
@@ -854,7 +938,7 @@
 
   async function findExistingOrder(payload) {
     const res = await api(
-      `/api/orders?order_date=${encodeURIComponent(payload.order_date)}`
+      `/api/orders?order_date=${encodeURIComponent(payload.order_date)}&supplier_id=${encodeURIComponent(payload.supplier_id)}`
     );
     if (!res.ok) return null;
     const orders = await res.json();
@@ -864,7 +948,7 @@
         (o) =>
           o.order_date === payload.order_date &&
           o.shop_name === payload.shop_name &&
-          o.supplier_name === payload.supplier_name &&
+          Number(o.supplier_id) === Number(payload.supplier_id) &&
           almostEqual(o.daily_total, payload.daily_total)
       ) || null
     );
@@ -895,11 +979,11 @@
     const payload = {
       order_date: orderDate.value,
       shop_name: shopName.value.trim(),
-      supplier_name: supplierName.value.trim(),
+      supplier_id: Number(supplierId.value),
       daily_total: Number(dailyTotal.value),
     };
 
-    if (!payload.shop_name || !payload.supplier_name) {
+    if (!payload.shop_name || !payload.supplier_id) {
       showMsg(formMsg, "请选择店铺和供应商", false);
       return;
     }
@@ -1121,16 +1205,17 @@
   resetQueryBtn.addEventListener("click", () => {
     queryDate.value = todayISO();
     queryShop.value = isManager() ? managerShopName() : "";
-    querySupplier.value = "";
+    querySupplierId.value = "";
     renderChipPicker(queryShopPicker, queryShop, shops, {
       allowEmpty: !isManager(),
       emptyLabel: "全部店铺",
       keepValue: false,
     });
-    renderChipPicker(querySupplierPicker, querySupplier, suppliers, {
+    renderChipPicker(querySupplierPicker, querySupplierId, suppliers, {
       allowEmpty: true,
       emptyLabel: "全部供应商",
       keepValue: false,
+      valueKey: "id",
     });
     lockShopPickers();
     rangeAnchor = null;

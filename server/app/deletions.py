@@ -60,6 +60,7 @@ def record_order_deletion(db: Database, order) -> None:
         "order_no": order.order_no,
         "order_date": _serialize_detail_value(order.order_date),
         "shop_name": order.shop_name,
+        "supplier_id": getattr(order, "supplier_id", None),
         "supplier_name": order.supplier_name,
         "daily_total": order.daily_total,
     }

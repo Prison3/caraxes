@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class OrderCreate(BaseModel):
     order_date: date = Field(..., description="订单日期")
     shop_name: str = Field(..., min_length=1, max_length=200, description="店铺名")
-    supplier_name: str = Field(..., min_length=1, max_length=200, description="供应商名")
+    supplier_id: int = Field(..., gt=0, description="供应商 ID")
     daily_total: float = Field(..., gt=0, description="单日总金额（浮点数）")
 
 
@@ -18,9 +18,7 @@ class OrderUpdate(BaseModel):
     shop_name: Optional[str] = Field(
         None, min_length=1, max_length=200, description="店铺名"
     )
-    supplier_name: Optional[str] = Field(
-        None, min_length=1, max_length=200, description="供应商名"
-    )
+    supplier_id: Optional[int] = Field(None, gt=0, description="供应商 ID")
     daily_total: Optional[float] = Field(
         None, gt=0, description="单日总金额（浮点数）"
     )
@@ -33,6 +31,7 @@ class OrderOut(BaseModel):
     order_no: str
     order_date: date
     shop_name: str
+    supplier_id: int
     supplier_name: str
     daily_total: float
     created_at: datetime

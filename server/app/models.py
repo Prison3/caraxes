@@ -88,13 +88,19 @@ class SupplierOrder:
     order_no: str
     order_date: date
     shop_name: str
+    supplier_id: int
     supplier_name: str
     daily_total: float
     created_at: datetime
     updated_at: datetime
 
     @classmethod
-    def from_doc(cls, doc: Mapping[str, Any]) -> "SupplierOrder":
+    def from_doc(
+        cls,
+        doc: Mapping[str, Any],
+        *,
+        supplier_name: Optional[str] = None,
+    ) -> "SupplierOrder":
         order_date = parse_order_date(doc["order_date"])
         order_id = int(doc["_id"])
         order_no = doc.get("order_no")
@@ -105,12 +111,16 @@ class SupplierOrder:
             else:
                 order_no = f"{order_date.strftime('%Y%m%d')}000000"
             order_no = f"{order_no}-{order_id:02d}"
+        raw_supplier_id = doc.get("supplier_id")
+        supplier_id = int(raw_supplier_id) if raw_supplier_id is not None else 0
+        resolved_name = supplier_name if supplier_name is not None else doc.get("supplier_name")
         return cls(
             id=order_id,
             order_no=str(order_no),
             order_date=order_date,
             shop_name=doc["shop_name"],
-            supplier_name=doc["supplier_name"],
+            supplier_id=supplier_id,
+            supplier_name=str(resolved_name or ""),
             daily_total=float(doc["daily_total"]),
             created_at=doc["created_at"],
             updated_at=doc["updated_at"],
@@ -123,7 +133,7 @@ def build_order_doc(
     order_no: str,
     order_date: date,
     shop_name: str,
-    supplier_name: str,
+    supplier_id: int,
     daily_total: float,
     created_at: Optional[datetime] = None,
     updated_at: Optional[datetime] = None,
@@ -134,7 +144,7 @@ def build_order_doc(
         "order_no": order_no,
         "order_date": serialize_order_date(order_date),
         "shop_name": shop_name,
-        "supplier_name": supplier_name,
+        "supplier_id": int(supplier_id),
         "daily_total": float(daily_total),
         "created_at": created_at or now,
         "updated_at": updated_at or now,

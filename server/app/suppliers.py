@@ -55,6 +55,54 @@ def create_supplier(
     return Supplier.from_doc(doc)
 
 
+@router.put("/{supplier_id}", response_model=SupplierOut)
+def update_supplier(
+    supplier_id: int,
+    payload: NameCreate,
+    db: Database = Depends(get_db),
+    _: User = Depends(require_admin),
+):
+    doc = db.suppliers.find_one({"_id": supplier_id})
+    if doc is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="供应商不存在")
+
+    name = " ".join(payload.name.strip().split())
+    if not name:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="供应商名不能为空"
+        )
+    old_name = doc["name"]
+    name_key = normalize_name(name)
+    if name == old_name and doc.get("name_key") == name_key:
+        return Supplier.from_doc(doc)
+
+    conflict = db.suppliers.find_one(
+        {
+            "_id": {"$ne": supplier_id},
+            "$or": [{"name": name}, {"name_key": name_key}],
+        }
+    )
+    if conflict:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="供应商名不可以重复",
+        )
+
+    try:
+        db.suppliers.update_one(
+            {"_id": supplier_id},
+            {"$set": {"name": name, "name_key": name_key}},
+        )
+    except DuplicateKeyError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="供应商名不可以重复",
+        )
+
+    updated = db.suppliers.find_one({"_id": supplier_id})
+    return Supplier.from_doc(updated)
+
+
 @router.delete("/{supplier_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_supplier(
     supplier_id: int,
@@ -65,5 +113,11 @@ def delete_supplier(
     doc = db.suppliers.find_one({"_id": supplier_id})
     if doc is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="供应商不存在")
+    order_count = db.supplier_orders.count_documents({"supplier_id": supplier_id})
+    if order_count > 0:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"该供应商还有 {order_count} 笔订单，无法删除",
+        )
     record_supplier_deletion(db, supplier_id, doc["name"])
     db.suppliers.delete_one({"_id": supplier_id})

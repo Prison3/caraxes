@@ -726,15 +726,29 @@ html.is-pc .chip-grid {
   word-break: break-word;
 }
 
-.manage-chip .delete-btn {
-  justify-self: end;
+.manage-chip .delete-btn,
+.manage-chip .rename-btn {
   border: 0;
   background: transparent;
-  color: var(--danger);
   font-size: var(--fs-xs);
   cursor: pointer;
   padding: 0.2rem 0.3rem;
   min-height: 32px;
+}
+
+.manage-chip .delete-btn {
+  justify-self: end;
+  color: var(--danger);
+}
+
+.manage-chip .rename-btn {
+  color: var(--accent, #2563eb);
+}
+
+.manage-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.25rem;
 }
 
 html.is-mobile .chip-grid {
