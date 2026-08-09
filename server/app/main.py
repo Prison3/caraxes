@@ -13,6 +13,7 @@ from .routers import router as orders_router
 from .seed import seed_catalog
 from .shops import router as shops_router
 from .suppliers import router as suppliers_router
+from .users import router as users_router
 
 ensure_indexes()
 seed_catalog()
@@ -48,6 +49,7 @@ app.include_router(orders_router, dependencies=_auth)
 app.include_router(shops_router, dependencies=_auth)
 app.include_router(suppliers_router, dependencies=_auth)
 app.include_router(deletions_router, dependencies=_auth)
+app.include_router(users_router, dependencies=_auth)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 

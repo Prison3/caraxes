@@ -8,7 +8,8 @@ from pydantic import BaseModel, ConfigDict
 from pymongo.database import Database
 
 from .database import get_db, next_id
-from .models import utcnow
+from .models import User, utcnow
+from .roles import require_admin
 
 router = APIRouter(prefix="/api/deletions", tags=["deletions"])
 
@@ -91,6 +92,7 @@ def record_supplier_deletion(db: Database, supplier_id: int, name: str) -> None:
 def list_deletions(
     limit: int = Query(30, ge=1, le=100, description="返回条数上限"),
     db: Database = Depends(get_db),
+    _: User = Depends(require_admin),
 ):
     cursor = db.deletion_logs.find().sort([("deleted_at", -1), ("_id", -1)]).limit(limit)
     items: List[DeletionOut] = []

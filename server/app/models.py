@@ -23,19 +23,31 @@ def serialize_order_date(value: date) -> str:
     return value.isoformat()
 
 
+ROLE_ADMIN = "admin"
+ROLE_MANAGER = "manager"
+
+
 @dataclass
 class User:
     id: int
     username: str
     password_hash: str
+    role: str
+    shop_name: Optional[str]
     created_at: datetime
 
     @classmethod
     def from_doc(cls, doc: Mapping[str, Any]) -> "User":
+        role = str(doc.get("role") or ROLE_ADMIN)
+        if role not in (ROLE_ADMIN, ROLE_MANAGER):
+            role = ROLE_ADMIN
+        shop_name = doc.get("shop_name")
         return cls(
             id=int(doc["_id"]),
             username=doc["username"],
             password_hash=doc["password_hash"],
+            role=role,
+            shop_name=str(shop_name).strip() if shop_name else None,
             created_at=doc["created_at"],
         )
 

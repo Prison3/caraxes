@@ -42,7 +42,9 @@
   const panelCreate = document.getElementById("panelCreate");
   const panelQuery = document.getElementById("panelQuery");
   const panelManage = document.getElementById("panelManage");
+  const mainTabs = document.getElementById("mainTabs");
   const tabs = document.querySelectorAll(".tab");
+  const manageTab = document.querySelector('.tab[data-tab="manage"]');
 
   const shopForm = document.getElementById("shopForm");
   const newShopName = document.getElementById("newShopName");
@@ -53,6 +55,14 @@
   const newSupplierName = document.getElementById("newSupplierName");
   const supplierMsg = document.getElementById("supplierMsg");
   const supplierManageList = document.getElementById("supplierManageList");
+
+  const managerForm = document.getElementById("managerForm");
+  const newManagerUsername = document.getElementById("newManagerUsername");
+  const newManagerPassword = document.getElementById("newManagerPassword");
+  const newManagerShop = document.getElementById("newManagerShop");
+  const newManagerShopPicker = document.getElementById("newManagerShopPicker");
+  const managerMsg = document.getElementById("managerMsg");
+  const managerManageList = document.getElementById("managerManageList");
 
   const deletionList = document.getElementById("deletionList");
   const deletionTableWrap = document.getElementById("deletionTableWrap");
@@ -68,19 +78,130 @@
   const dupPassword = document.getElementById("dupPassword");
   const dupPasswordError = document.getElementById("dupPasswordError");
   const currentUser = document.getElementById("currentUser");
+  const currentRole = document.getElementById("currentRole");
   const logoutBtn = document.getElementById("logoutBtn");
   const recentList = document.getElementById("recentList");
   const recentTableWrap = document.getElementById("recentTableWrap");
   const recentEmpty = document.getElementById("recentEmpty");
   const recentMeta = document.getElementById("recentMeta");
 
-  const ADMIN_CONFIRM_PASSWORD = "mei";
   const ADMIN_CONFIRM_HEADER = "X-Admin-Confirm";
 
   let dupResolve = null;
   let dupRequirePassword = false;
   let shops = [];
   let suppliers = [];
+  let managers = [];
+  let currentUserInfo = null;
+
+  function isAdmin() {
+    return !currentUserInfo || currentUserInfo.role !== "manager";
+  }
+
+  function isManager() {
+    return Boolean(currentUserInfo && currentUserInfo.role === "manager");
+  }
+
+  function managerShopName() {
+    return (currentUserInfo && currentUserInfo.shop_name) || "";
+  }
+
+  function applyRoleUi() {
+    const admin = isAdmin();
+    if (manageTab) manageTab.hidden = !admin;
+    if (mainTabs) {
+      mainTabs.classList.toggle("tabs-3", admin);
+      mainTabs.classList.toggle("tabs-2", !admin);
+    }
+    if (currentRole) {
+      if (isManager()) {
+        currentRole.hidden = false;
+        currentRole.textContent = `店长 · ${managerShopName()}`;
+      } else {
+        currentRole.hidden = false;
+        currentRole.textContent = "管理员";
+      }
+    }
+    document.body.classList.toggle("role-manager", isManager());
+    document.body.classList.toggle("role-admin", isAdmin());
+    if (!admin && panelManage && !panelManage.hidden) {
+      switchTab("create");
+    }
+  }
+
+  function lockShopPickers() {
+    const shop = managerShopName();
+    if (!isManager() || !shop) {
+      shopPicker?.closest(".choice-field")?.classList.remove("is-locked");
+      queryShopPicker?.closest(".choice-field")?.classList.remove("is-locked");
+      return;
+    }
+    shopName.value = shop;
+    queryShop.value = shop;
+    shopPicker?.closest(".choice-field")?.classList.add("is-locked");
+    queryShopPicker?.closest(".choice-field")?.classList.add("is-locked");
+  }
+
+  function renderManagers(items) {
+    if (!managerManageList) return;
+    managerManageList.innerHTML = "";
+    if (!items.length) {
+      const empty = document.createElement("p");
+      empty.className = "chip-empty";
+      empty.textContent = "暂无店长账号";
+      managerManageList.appendChild(empty);
+      return;
+    }
+    for (const item of items) {
+      const row = document.createElement("div");
+      row.className = "manager-row";
+      row.innerHTML = `
+        <div class="meta">
+          <span class="name"></span>
+          <span class="shop"></span>
+        </div>
+        <button type="button" class="delete-btn">删除</button>
+      `;
+      row.querySelector(".name").textContent = item.username;
+      row.querySelector(".shop").textContent = `店铺：${item.shop_name || "-"}`;
+      row.querySelector(".delete-btn").addEventListener("click", () => deleteManager(item));
+      managerManageList.appendChild(row);
+    }
+  }
+
+  async function loadManagers() {
+    if (!isAdmin()) {
+      managers = [];
+      renderManagers([]);
+      return;
+    }
+    const res = await api("/api/users");
+    if (!res.ok) throw new Error(await parseError(res));
+    managers = await res.json();
+    renderManagers(managers);
+    if (newManagerShopPicker) {
+      renderChipPicker(newManagerShopPicker, newManagerShop, shops, {
+        allowEmpty: false,
+        emptyHint: "请先添加店铺",
+        keepValue: true,
+      });
+    }
+  }
+
+  async function deleteManager(item) {
+    const password = await confirmDelete(`确认删除店长「${item.username}」？`);
+    if (!password) return;
+    const res = await api(`/api/users/${item.id}`, {
+      method: "DELETE",
+      headers: adminConfirmHeaders(password),
+    });
+    if (!res.ok && res.status !== 204) {
+      showMsg(managerMsg, await parseError(res), false);
+      return;
+    }
+    showMsg(managerMsg, "店长已删除", true);
+    await loadManagers();
+  }
 
   async function api(url, options = {}) {
     const res = await fetch(url, { credentials: "include", ...options });
@@ -329,15 +450,16 @@
   }
 
   function closeModal(result) {
+    let resolveValue = result;
     if (result && dupRequirePassword) {
-      const pwd = dupPassword.value.trim();
-      if (pwd !== ADMIN_CONFIRM_PASSWORD) {
+      const pwd = dupPassword.value;
+      if (!pwd) {
         dupPasswordError.hidden = false;
-        dupPasswordError.textContent = "管理密码错误";
+        dupPasswordError.textContent = "请输入登录密码";
         dupPassword.focus();
-        dupPassword.select();
         return;
       }
+      resolveValue = pwd;
     }
     dupModal.hidden = true;
     dupRequirePassword = false;
@@ -347,14 +469,14 @@
     if (dupResolve) {
       const resolve = dupResolve;
       dupResolve = null;
-      resolve(result);
+      resolve(resolveValue);
     }
   }
 
   async function confirmDelete(text) {
     return openModal({
       title: "确认删除",
-      text: `${text}\n请输入管理密码后确认。`,
+      text: `${text}\n请输入登录密码后确认。`,
       yesText: "确定删除",
       noText: "取消",
       danger: true,
@@ -362,10 +484,10 @@
     });
   }
 
-  function adminConfirmHeaders(extra = {}) {
+  function adminConfirmHeaders(password, extra = {}) {
     return {
       ...extra,
-      [ADMIN_CONFIRM_HEADER]: ADMIN_CONFIRM_PASSWORD,
+      [ADMIN_CONFIRM_HEADER]: password,
     };
   }
 
@@ -508,6 +630,11 @@
     shops = await shopRes.json();
     suppliers = await supplierRes.json();
 
+    if (isManager() && managerShopName()) {
+      shopName.value = managerShopName();
+      queryShop.value = managerShopName();
+    }
+
     renderChipPicker(shopPicker, shopName, shops, {
       allowEmpty: false,
       emptyHint: "暂无店铺，请先在管理页添加",
@@ -519,7 +646,7 @@
       keepValue: true,
     });
     renderChipPicker(queryShopPicker, queryShop, shops, {
-      allowEmpty: true,
+      allowEmpty: !isManager(),
       emptyLabel: "全部店铺",
       keepValue: true,
     });
@@ -528,17 +655,21 @@
       emptyLabel: "全部供应商",
       keepValue: true,
     });
-    renderManageGrid(shopManageList, shops, deleteShop, "暂无店铺");
-    renderManageGrid(supplierManageList, suppliers, deleteSupplier, "暂无供应商");
-    await loadDeletions();
+    lockShopPickers();
+
+    if (isAdmin()) {
+      renderManageGrid(shopManageList, shops, deleteShop, "暂无店铺");
+      renderManageGrid(supplierManageList, suppliers, deleteSupplier, "暂无供应商");
+      await Promise.all([loadManagers(), loadDeletions()]);
+    }
   }
 
   async function deleteShop(item) {
-    const ok = await confirmDelete(`确认删除店铺「${item.name}」？`);
-    if (!ok) return;
+    const password = await confirmDelete(`确认删除店铺「${item.name}」？`);
+    if (!password) return;
     const res = await api(`/api/shops/${item.id}`, {
       method: "DELETE",
-      headers: adminConfirmHeaders(),
+      headers: adminConfirmHeaders(password),
     });
     if (!res.ok && res.status !== 204) {
       showMsg(shopMsg, await parseError(res), false);
@@ -549,11 +680,11 @@
   }
 
   async function deleteSupplier(item) {
-    const ok = await confirmDelete(`确认删除供应商「${item.name}」？`);
-    if (!ok) return;
+    const password = await confirmDelete(`确认删除供应商「${item.name}」？`);
+    if (!password) return;
     const res = await api(`/api/suppliers/${item.id}`, {
       method: "DELETE",
-      headers: adminConfirmHeaders(),
+      headers: adminConfirmHeaders(password),
     });
     if (!res.ok && res.status !== 204) {
       showMsg(supplierMsg, await parseError(res), false);
@@ -564,6 +695,9 @@
   }
 
   function switchTab(name) {
+    if (name === "manage" && !isAdmin()) {
+      name = "create";
+    }
     tabs.forEach((tab) => {
       const active = tab.dataset.tab === name;
       tab.classList.toggle("active", active);
@@ -579,6 +713,35 @@
     }
   }
 
+  function canDeleteOrders() {
+    return isAdmin() || isManager();
+  }
+
+  function appendOrderRow(tbody, order) {
+    const tr = document.createElement("tr");
+    const opsHtml = canDeleteOrders()
+      ? `<td class="ops"><button type="button" class="delete-btn">删除</button></td>`
+      : `<td class="ops ops-empty">—</td>`;
+    tr.innerHTML = `
+      <td class="col-no"></td>
+      <td class="col-date"></td>
+      <td class="col-shop"></td>
+      <td class="col-supplier"></td>
+      <td class="num col-amount"></td>
+      ${opsHtml}
+    `;
+    tr.querySelector(".col-no").textContent = order.order_no || order.id;
+    tr.querySelector(".col-date").textContent = order.order_date;
+    tr.querySelector(".col-shop").textContent = order.shop_name;
+    tr.querySelector(".col-supplier").textContent = order.supplier_name;
+    tr.querySelector(".col-amount").textContent = `¥${formatMoney(order.daily_total)}`;
+    const deleteBtn = tr.querySelector(".delete-btn");
+    if (deleteBtn) {
+      deleteBtn.addEventListener("click", () => deleteOrder(order.id));
+    }
+    tbody.appendChild(tr);
+  }
+
   function renderRecentOrders(orders) {
     recentList.innerHTML = "";
     const hasItems = orders.length > 0;
@@ -588,24 +751,7 @@
     recentMeta.textContent = hasItems ? `最近 ${orders.length} 条` : "";
 
     for (const order of orders) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td class="col-no"></td>
-        <td class="col-date"></td>
-        <td class="col-shop"></td>
-        <td class="col-supplier"></td>
-        <td class="num col-amount"></td>
-        <td class="ops"><button type="button" class="delete-btn">删除</button></td>
-      `;
-      tr.querySelector(".col-no").textContent = order.order_no || order.id;
-      tr.querySelector(".col-date").textContent = order.order_date;
-      tr.querySelector(".col-shop").textContent = order.shop_name;
-      tr.querySelector(".col-supplier").textContent = order.supplier_name;
-      tr.querySelector(".col-amount").textContent = `¥${formatMoney(order.daily_total)}`;
-      tr.querySelector(".delete-btn").addEventListener("click", () => {
-        deleteOrder(order.id);
-      });
-      recentList.appendChild(tr);
+      appendOrderRow(recentList, order);
     }
   }
 
@@ -649,24 +795,7 @@
     }
 
     for (const order of orders) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td class="col-no"></td>
-        <td class="col-date"></td>
-        <td class="col-shop"></td>
-        <td class="col-supplier"></td>
-        <td class="num col-amount"></td>
-        <td class="ops"><button type="button" class="delete-btn">删除</button></td>
-      `;
-      tr.querySelector(".col-no").textContent = order.order_no || order.id;
-      tr.querySelector(".col-date").textContent = order.order_date;
-      tr.querySelector(".col-shop").textContent = order.shop_name;
-      tr.querySelector(".col-supplier").textContent = order.supplier_name;
-      tr.querySelector(".col-amount").textContent = `¥${formatMoney(order.daily_total)}`;
-      tr.querySelector(".delete-btn").addEventListener("click", () => {
-        deleteOrder(order.id);
-      });
-      orderList.appendChild(tr);
+      appendOrderRow(orderList, order);
     }
   }
 
@@ -702,13 +831,17 @@
   }
 
   async function deleteOrder(id) {
-    const confirmed = await confirmDelete("确认删除这条订单？");
-    if (!confirmed) return;
+    if (!canDeleteOrders()) {
+      showMsg(formMsg, "无权删除订单", false);
+      return;
+    }
+    const password = await confirmDelete("确认删除这条订单？");
+    if (!password) return;
     const msgEl = panelCreate.hidden ? queryMsg : formMsg;
     try {
       const res = await api(`/api/orders/${id}`, {
         method: "DELETE",
-        headers: adminConfirmHeaders(),
+        headers: adminConfirmHeaders(password),
       });
       if (!res.ok && res.status !== 204) throw new Error(await parseError(res));
       showMsg(msgEl, "已删除", true);
@@ -754,6 +887,10 @@
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     hideMsg(formMsg);
+
+    if (isManager() && managerShopName()) {
+      shopName.value = managerShopName();
+    }
 
     const payload = {
       order_date: orderDate.value,
@@ -864,6 +1001,41 @@
     await loadCatalog();
   });
 
+  if (managerForm) {
+    managerForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      hideMsg(managerMsg);
+      const username = newManagerUsername.value.trim();
+      const password = newManagerPassword.value;
+      const shop = newManagerShop.value.trim();
+      if (!username) {
+        showMsg(managerMsg, "请输入用户名", false);
+        return;
+      }
+      if (!password || password.length < 4) {
+        showMsg(managerMsg, "密码至少 4 位", false);
+        return;
+      }
+      if (!shop) {
+        showMsg(managerMsg, "请选择绑定店铺", false);
+        return;
+      }
+      const res = await api("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password, shop_name: shop }),
+      });
+      if (!res.ok) {
+        showMsg(managerMsg, await parseError(res), false);
+        return;
+      }
+      newManagerUsername.value = "";
+      newManagerPassword.value = "";
+      showMsg(managerMsg, "店长已添加", true);
+      await loadManagers();
+    });
+  }
+
   queryForm.addEventListener("submit", (e) => {
     e.preventDefault();
     queryOrders();
@@ -948,10 +1120,10 @@
 
   resetQueryBtn.addEventListener("click", () => {
     queryDate.value = todayISO();
-    queryShop.value = "";
+    queryShop.value = isManager() ? managerShopName() : "";
     querySupplier.value = "";
     renderChipPicker(queryShopPicker, queryShop, shops, {
-      allowEmpty: true,
+      allowEmpty: !isManager(),
       emptyLabel: "全部店铺",
       keepValue: false,
     });
@@ -960,6 +1132,7 @@
       emptyLabel: "全部供应商",
       keepValue: false,
     });
+    lockShopPickers();
     rangeAnchor = null;
     setCalOpen(false);
     queryOrders();
@@ -976,8 +1149,9 @@
   (async () => {
     const meRes = await api("/api/auth/me");
     if (!meRes.ok) return;
-    const me = await meRes.json();
-    currentUser.textContent = me.username;
+    currentUserInfo = await meRes.json();
+    currentUser.textContent = currentUserInfo.username;
+    applyRoleUi();
     await Promise.all([loadCatalog(), loadRecentOrders()]);
   })().catch((err) => {
     if (err.message !== "未登录") {

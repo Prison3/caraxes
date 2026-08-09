@@ -5,22 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>供应商管理系统</title>
   <script src="/static/device.js?v=2"></script>
-  <link rel="stylesheet" href="/static/style.css?v=20260809a" />
+  <link rel="stylesheet" href="/static/style.css?v=20260809c" />
 </head>
 <body>
   <header class="topbar">
     <h1>供应商管理系统</h1>
     <div class="topbar-user">
       <span id="currentUser" class="uname"></span>
+      <span id="currentRole" class="urole" hidden></span>
       <button type="button" id="logoutBtn" class="logout-btn">退出</button>
     </div>
   </header>
 
   <main class="wrap">
-    <nav class="tabs tabs-3" role="tablist">
+    <nav id="mainTabs" class="tabs tabs-3" role="tablist">
       <button type="button" class="tab active" data-tab="create" role="tab" aria-selected="true">录入</button>
       <button type="button" class="tab" data-tab="query" role="tab" aria-selected="false">查询</button>
-      <button type="button" class="tab" data-tab="manage" role="tab" aria-selected="false">管理</button>
+      <button type="button" class="tab tab-admin" data-tab="manage" role="tab" aria-selected="false">管理</button>
     </nav>
 
     <section id="panelCreate" class="panel tab-panel active" role="tabpanel">
@@ -171,6 +172,17 @@
       <p id="supplierMsg" class="msg" hidden></p>
       <div id="supplierManageList" class="chip-grid manage-grid" aria-label="供应商列表"></div>
 
+      <h2 class="section-gap">店长账号</h2>
+      <form id="managerForm" class="manager-form">
+        <input type="text" id="newManagerUsername" placeholder="用户名" maxlength="64" required />
+        <input type="password" id="newManagerPassword" placeholder="密码" maxlength="128" required />
+        <input type="hidden" id="newManagerShop" value="" />
+        <div id="newManagerShopPicker" class="chip-grid" role="listbox" aria-label="绑定店铺"></div>
+        <button type="submit">添加店长</button>
+      </form>
+      <p id="managerMsg" class="msg" hidden></p>
+      <div id="managerManageList" class="manager-list" aria-label="店长列表"></div>
+
       <div class="recent-block orders-readable deletion-block">
         <div class="list-head">
           <h3>最近删除</h3>
@@ -199,14 +211,14 @@
       <h3 id="dupTitle">是否提交</h3>
       <p id="dupText">订单信息可能重复，是否继续提交</p>
       <label id="dupPasswordWrap" class="modal-password" hidden>
-        管理密码
+        登录密码
         <input
           type="password"
           id="dupPassword"
           name="admin_confirm"
-          autocomplete="off"
+          autocomplete="current-password"
           spellcheck="false"
-          placeholder="请输入管理密码"
+          placeholder="请输入登录密码"
         />
       </label>
       <p id="dupPasswordError" class="msg err modal-password-error" hidden></p>
@@ -217,6 +229,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=20260809b"></script>
+  <script src="/static/app.js?v=20260809e"></script>
 </body>
 </html>

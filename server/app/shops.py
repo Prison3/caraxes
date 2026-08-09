@@ -6,23 +6,34 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pymongo.database import Database
 from pymongo.errors import DuplicateKeyError
 
+from .auth import require_user
 from .confirm import require_admin_confirm
 from .database import get_db, next_id
 from .deletions import record_shop_deletion
-from .models import Shop, utcnow
+from .models import Shop, User, utcnow
 from .names import normalize_name
+from .roles import require_admin, scoped_shop_name
 from .schemas import NameCreate, ShopOut
 
 router = APIRouter(prefix="/api/shops", tags=["shops"])
 
 
 @router.get("", response_model=List[ShopOut])
-def list_shops(db: Database = Depends(get_db)):
-    return [Shop.from_doc(doc) for doc in db.shops.find().sort("_id", 1)]
+def list_shops(
+    db: Database = Depends(get_db),
+    user: User = Depends(require_user),
+):
+    scoped = scoped_shop_name(user)
+    query = {"name": scoped} if scoped is not None else {}
+    return [Shop.from_doc(doc) for doc in db.shops.find(query).sort("_id", 1)]
 
 
 @router.post("", response_model=ShopOut, status_code=status.HTTP_201_CREATED)
-def create_shop(payload: NameCreate, db: Database = Depends(get_db)):
+def create_shop(
+    payload: NameCreate,
+    db: Database = Depends(get_db),
+    _: User = Depends(require_admin),
+):
     name = " ".join(payload.name.strip().split())
     if not name:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="店铺名不能为空")
@@ -52,7 +63,8 @@ def create_shop(payload: NameCreate, db: Database = Depends(get_db)):
 def delete_shop(
     shop_id: int,
     db: Database = Depends(get_db),
-    _: None = Depends(require_admin_confirm),
+    _: User = Depends(require_admin),
+    __: None = Depends(require_admin_confirm),
 ):
     doc = db.shops.find_one({"_id": shop_id})
     if doc is None:

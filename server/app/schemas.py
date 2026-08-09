@@ -49,6 +49,24 @@ class UserOut(BaseModel):
 
     id: int
     username: str
+    role: str = "admin"
+    shop_name: Optional[str] = None
+
+
+class ManagerCreate(BaseModel):
+    username: str = Field(..., min_length=1, max_length=64, description="店长用户名")
+    password: str = Field(..., min_length=4, max_length=128, description="登录密码")
+    shop_name: str = Field(..., min_length=1, max_length=200, description="绑定店铺")
+
+
+class ManagerOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    username: str
+    role: str
+    shop_name: Optional[str]
+    created_at: datetime
 
 
 class NameCreate(BaseModel):

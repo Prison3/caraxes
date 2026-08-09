@@ -9,8 +9,9 @@ from pymongo.errors import DuplicateKeyError
 from .confirm import require_admin_confirm
 from .database import get_db, next_id
 from .deletions import record_supplier_deletion
-from .models import Supplier, utcnow
+from .models import Supplier, User, utcnow
 from .names import normalize_name
+from .roles import require_admin
 from .schemas import NameCreate, SupplierOut
 
 router = APIRouter(prefix="/api/suppliers", tags=["suppliers"])
@@ -22,7 +23,11 @@ def list_suppliers(db: Database = Depends(get_db)):
 
 
 @router.post("", response_model=SupplierOut, status_code=status.HTTP_201_CREATED)
-def create_supplier(payload: NameCreate, db: Database = Depends(get_db)):
+def create_supplier(
+    payload: NameCreate,
+    db: Database = Depends(get_db),
+    _: User = Depends(require_admin),
+):
     name = " ".join(payload.name.strip().split())
     if not name:
         raise HTTPException(
@@ -54,7 +59,8 @@ def create_supplier(payload: NameCreate, db: Database = Depends(get_db)):
 def delete_supplier(
     supplier_id: int,
     db: Database = Depends(get_db),
-    _: None = Depends(require_admin_confirm),
+    _: User = Depends(require_admin),
+    __: None = Depends(require_admin_confirm),
 ):
     doc = db.suppliers.find_one({"_id": supplier_id})
     if doc is None:

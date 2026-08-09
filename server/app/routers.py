@@ -9,10 +9,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pymongo import ReturnDocument
 from pymongo.database import Database
 
+from .auth import require_user
 from .confirm import require_admin_confirm
 from .database import get_db, next_id, next_order_no
 from .deletions import record_order_deletion
-from .models import SupplierOrder, build_order_doc, serialize_order_date, utcnow
+from .models import SupplierOrder, User, build_order_doc, serialize_order_date, utcnow
+from .roles import scoped_shop_name
 from .schemas import OrderCreate, OrderOut, OrderUpdate
 
 router = APIRouter(prefix="/api/orders", tags=["orders"])
@@ -34,13 +36,33 @@ def _strip_fields(data: dict) -> dict:
     return data
 
 
+def _ensure_order_access(user: User, shop_name: str) -> None:
+    scoped = scoped_shop_name(user)
+    if scoped is not None and shop_name != scoped:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="订单不存在")
+
+
 @router.post("", response_model=OrderOut, status_code=status.HTTP_201_CREATED)
-def create_order(payload: OrderCreate, db: Database = Depends(get_db)):
+def create_order(
+    payload: OrderCreate,
+    db: Database = Depends(get_db),
+    user: User = Depends(require_user),
+):
+    shop_name = payload.shop_name.strip()
+    scoped = scoped_shop_name(user)
+    if scoped is not None:
+        if shop_name and shop_name != scoped:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="店长只能录入本店订单",
+            )
+        shop_name = scoped
+
     doc = build_order_doc(
         order_id=next_id(db, "supplier_orders"),
         order_no=next_order_no(db, payload.order_date),
         order_date=payload.order_date,
-        shop_name=payload.shop_name.strip(),
+        shop_name=shop_name,
         supplier_name=payload.supplier_name.strip(),
         daily_total=payload.daily_total,
     )
@@ -62,6 +84,7 @@ def list_orders(
         None, ge=1, le=100, description="返回条数上限（按最近优先）"
     ),
     db: Database = Depends(get_db),
+    user: User = Depends(require_user),
 ):
     filters: dict = {}
 
@@ -91,7 +114,10 @@ def list_orders(
     elif order_date is not None:
         filters["order_date"] = serialize_order_date(order_date)
 
-    if shop_name:
+    scoped = scoped_shop_name(user)
+    if scoped is not None:
+        filters["shop_name"] = scoped
+    elif shop_name:
         filters["shop_name"] = {"$regex": re.escape(shop_name.strip())}
     if supplier_name:
         filters["supplier_name"] = {"$regex": re.escape(supplier_name.strip())}
@@ -105,24 +131,45 @@ def list_orders(
 
 
 @router.get("/{order_id}", response_model=OrderOut)
-def get_order(order_id: int, db: Database = Depends(get_db)):
+def get_order(
+    order_id: int,
+    db: Database = Depends(get_db),
+    user: User = Depends(require_user),
+):
     doc = db.supplier_orders.find_one({"_id": order_id})
     if doc is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="订单不存在")
-    return SupplierOrder.from_doc(doc)
+    order = SupplierOrder.from_doc(doc)
+    _ensure_order_access(user, order.shop_name)
+    return order
 
 
 @router.put("/{order_id}", response_model=OrderOut)
-def update_order(order_id: int, payload: OrderUpdate, db: Database = Depends(get_db)):
+def update_order(
+    order_id: int,
+    payload: OrderUpdate,
+    db: Database = Depends(get_db),
+    user: User = Depends(require_user),
+):
     existing = db.supplier_orders.find_one({"_id": order_id})
     if existing is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="订单不存在")
+    order = SupplierOrder.from_doc(existing)
+    _ensure_order_access(user, order.shop_name)
 
     data = _strip_fields(payload.model_dump(exclude_unset=True))
+    scoped = scoped_shop_name(user)
+    if scoped is not None:
+        if "shop_name" in data and data["shop_name"] and data["shop_name"] != scoped:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="店长不能修改为其他店铺",
+            )
+        data["shop_name"] = scoped
     if "order_date" in data and data["order_date"] is not None:
         data["order_date"] = serialize_order_date(data["order_date"])
     if not data:
-        return SupplierOrder.from_doc(existing)
+        return order
 
     data["updated_at"] = utcnow()
     result = db.supplier_orders.find_one_and_update(
@@ -137,10 +184,13 @@ def update_order(order_id: int, payload: OrderUpdate, db: Database = Depends(get
 def delete_order(
     order_id: int,
     db: Database = Depends(get_db),
+    user: User = Depends(require_user),
     _: None = Depends(require_admin_confirm),
 ):
     doc = db.supplier_orders.find_one({"_id": order_id})
     if doc is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="订单不存在")
-    record_order_deletion(db, SupplierOrder.from_doc(doc))
+    order = SupplierOrder.from_doc(doc)
+    _ensure_order_access(user, order.shop_name)
+    record_order_deletion(db, order)
     db.supplier_orders.delete_one({"_id": order_id})
