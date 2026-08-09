@@ -13,7 +13,7 @@ __all__ = [
     "is_admin",
     "is_manager",
     "require_admin",
-    "scoped_shop_name",
+    "scoped_shop_id",
 ]
 
 
@@ -34,14 +34,13 @@ def require_admin(user: User = Depends(require_user)) -> User:
     return user
 
 
-def scoped_shop_name(user: User) -> Optional[str]:
-    """店长返回绑定店铺名；管理员返回 None（不限制）。"""
+def scoped_shop_id(user: User) -> Optional[int]:
+    """店长返回绑定店铺 ID；管理员返回 None（不限制）。"""
     if is_manager(user):
-        shop = (user.shop_name or "").strip()
-        if not shop:
+        if not user.shop_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="店长账号未绑定店铺",
             )
-        return shop
+        return int(user.shop_id)
     return None

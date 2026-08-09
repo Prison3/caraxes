@@ -7,6 +7,7 @@ from pymongo.database import Database
 from pymongo.errors import DuplicateKeyError
 
 from .auth import hash_password
+from .catalog import require_shop, user_from_doc
 from .confirm import require_admin_confirm
 from .database import get_db, next_id
 from .models import ROLE_MANAGER, User, utcnow
@@ -22,7 +23,7 @@ def list_managers(
     _: User = Depends(require_admin),
 ):
     cursor = db.users.find({"role": ROLE_MANAGER}).sort("_id", 1)
-    return [User.from_doc(doc) for doc in cursor]
+    return [user_from_doc(db, doc) for doc in cursor]
 
 
 @router.post("", response_model=ManagerOut, status_code=status.HTTP_201_CREATED)
@@ -32,13 +33,9 @@ def create_manager(
     _: User = Depends(require_admin),
 ):
     username = payload.username.strip()
-    shop_name = " ".join(payload.shop_name.strip().split())
     if not username:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="用户名不能为空")
-    if not shop_name:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="店铺名不能为空")
-    if db.shops.find_one({"name": shop_name}) is None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="店铺不存在")
+    shop = require_shop(db, payload.shop_id)
     if db.users.find_one({"username": username}):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="用户名已存在")
 
@@ -47,14 +44,15 @@ def create_manager(
         "username": username,
         "password_hash": hash_password(payload.password),
         "role": ROLE_MANAGER,
-        "shop_name": shop_name,
+        "shop_id": int(shop["_id"]),
+        "shop_name": shop["name"],
         "created_at": utcnow(),
     }
     try:
         db.users.insert_one(doc)
     except DuplicateKeyError:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="用户名已存在")
-    return User.from_doc(doc)
+    return user_from_doc(db, doc)
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)

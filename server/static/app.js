@@ -1,7 +1,7 @@
 (() => {
   const form = document.getElementById("orderForm");
   const orderDate = document.getElementById("orderDate");
-  const shopName = document.getElementById("shopName");
+  const shopId = document.getElementById("shopId");
   const shopPicker = document.getElementById("shopPicker");
   const supplierId = document.getElementById("supplierId");
   const supplierPicker = document.getElementById("supplierPicker");
@@ -20,7 +20,7 @@
   const calNext = document.getElementById("calNext");
   const calToday = document.getElementById("calToday");
   const calClear = document.getElementById("calClear");
-  const queryShop = document.getElementById("queryShop");
+  const queryShopId = document.getElementById("queryShopId");
   const queryShopPicker = document.getElementById("queryShopPicker");
   const querySupplierId = document.getElementById("querySupplierId");
   const querySupplierPicker = document.getElementById("querySupplierPicker");
@@ -109,6 +109,12 @@
     return (currentUserInfo && currentUserInfo.shop_name) || "";
   }
 
+  function managerShopId() {
+    return currentUserInfo && currentUserInfo.shop_id
+      ? String(currentUserInfo.shop_id)
+      : "";
+  }
+
   function applyRoleUi() {
     const admin = isAdmin();
     if (manageTab) manageTab.hidden = !admin;
@@ -133,14 +139,14 @@
   }
 
   function lockShopPickers() {
-    const shop = managerShopName();
-    if (!isManager() || !shop) {
+    const sid = managerShopId();
+    if (!isManager() || !sid) {
       shopPicker?.closest(".choice-field")?.classList.remove("is-locked");
       queryShopPicker?.closest(".choice-field")?.classList.remove("is-locked");
       return;
     }
-    shopName.value = shop;
-    queryShop.value = shop;
+    shopId.value = sid;
+    queryShopId.value = sid;
     shopPicker?.closest(".choice-field")?.classList.add("is-locked");
     queryShopPicker?.closest(".choice-field")?.classList.add("is-locked");
   }
@@ -187,6 +193,7 @@
         allowEmpty: false,
         emptyHint: "请先添加店铺",
         keepValue: true,
+        valueKey: "id",
       });
     }
   }
@@ -509,9 +516,9 @@
     });
   }
 
-  async function promptRename(oldName) {
+  async function promptRename(kindLabel, oldName) {
     return openModal({
-      title: "修改供应商名称",
+      title: `修改${kindLabel}名称`,
       text: `当前名称：${oldName}`,
       yesText: "保存",
       noText: "取消",
@@ -682,15 +689,16 @@
     shops = await shopRes.json();
     suppliers = await supplierRes.json();
 
-    if (isManager() && managerShopName()) {
-      shopName.value = managerShopName();
-      queryShop.value = managerShopName();
+    if (isManager() && managerShopId()) {
+      shopId.value = managerShopId();
+      queryShopId.value = managerShopId();
     }
 
-    renderChipPicker(shopPicker, shopName, shops, {
+    renderChipPicker(shopPicker, shopId, shops, {
       allowEmpty: false,
       emptyHint: "暂无店铺，请先在管理页添加",
       keepValue: true,
+      valueKey: "id",
     });
     renderChipPicker(supplierPicker, supplierId, suppliers, {
       allowEmpty: false,
@@ -698,10 +706,11 @@
       keepValue: true,
       valueKey: "id",
     });
-    renderChipPicker(queryShopPicker, queryShop, shops, {
+    renderChipPicker(queryShopPicker, queryShopId, shops, {
       allowEmpty: !isManager(),
       emptyLabel: "全部店铺",
       keepValue: true,
+      valueKey: "id",
     });
     renderChipPicker(querySupplierPicker, querySupplierId, suppliers, {
       allowEmpty: true,
@@ -712,7 +721,13 @@
     lockShopPickers();
 
     if (isAdmin()) {
-      renderManageGrid(shopManageList, shops, deleteShop, "暂无店铺");
+      renderManageGrid(
+        shopManageList,
+        shops,
+        deleteShop,
+        "暂无店铺",
+        renameShop
+      );
       renderManageGrid(
         supplierManageList,
         suppliers,
@@ -724,8 +739,32 @@
     }
   }
 
+  async function renameShop(item) {
+    const name = await promptRename("店铺", item.name);
+    if (!name) return;
+    if (name === item.name) {
+      showMsg(shopMsg, "名称未变化", true);
+      return;
+    }
+    if (nameExists(shops, name)) {
+      showMsg(shopMsg, "店铺名不可以重复", false);
+      return;
+    }
+    const res = await api(`/api/shops/${item.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) {
+      showMsg(shopMsg, await parseError(res), false);
+      return;
+    }
+    showMsg(shopMsg, "店铺名称已更新", true);
+    await loadCatalog();
+  }
+
   async function renameSupplier(item) {
-    const name = await promptRename(item.name);
+    const name = await promptRename("供应商", item.name);
     if (!name) return;
     if (name === item.name) {
       showMsg(supplierMsg, "名称未变化", true);
@@ -895,7 +934,7 @@
     Object.entries(parsed.params).forEach(([key, value]) => {
       params.set(key, value);
     });
-    if (queryShop.value) params.set("shop_name", queryShop.value);
+    if (queryShopId.value) params.set("shop_id", queryShopId.value);
     if (querySupplierId.value) params.set("supplier_id", querySupplierId.value);
 
     listMeta.textContent = "加载中…";
@@ -938,7 +977,7 @@
 
   async function findExistingOrder(payload) {
     const res = await api(
-      `/api/orders?order_date=${encodeURIComponent(payload.order_date)}&supplier_id=${encodeURIComponent(payload.supplier_id)}`
+      `/api/orders?order_date=${encodeURIComponent(payload.order_date)}&shop_id=${encodeURIComponent(payload.shop_id)}&supplier_id=${encodeURIComponent(payload.supplier_id)}`
     );
     if (!res.ok) return null;
     const orders = await res.json();
@@ -947,7 +986,7 @@
       orders.find(
         (o) =>
           o.order_date === payload.order_date &&
-          o.shop_name === payload.shop_name &&
+          Number(o.shop_id) === Number(payload.shop_id) &&
           Number(o.supplier_id) === Number(payload.supplier_id) &&
           almostEqual(o.daily_total, payload.daily_total)
       ) || null
@@ -972,18 +1011,18 @@
     e.preventDefault();
     hideMsg(formMsg);
 
-    if (isManager() && managerShopName()) {
-      shopName.value = managerShopName();
+    if (isManager() && managerShopId()) {
+      shopId.value = managerShopId();
     }
 
     const payload = {
       order_date: orderDate.value,
-      shop_name: shopName.value.trim(),
+      shop_id: Number(shopId.value),
       supplier_id: Number(supplierId.value),
       daily_total: Number(dailyTotal.value),
     };
 
-    if (!payload.shop_name || !payload.supplier_id) {
+    if (!payload.shop_id || !payload.supplier_id) {
       showMsg(formMsg, "请选择店铺和供应商", false);
       return;
     }
@@ -1091,7 +1130,7 @@
       hideMsg(managerMsg);
       const username = newManagerUsername.value.trim();
       const password = newManagerPassword.value;
-      const shop = newManagerShop.value.trim();
+      const shop_id = Number(newManagerShop.value);
       if (!username) {
         showMsg(managerMsg, "请输入用户名", false);
         return;
@@ -1100,14 +1139,14 @@
         showMsg(managerMsg, "密码至少 4 位", false);
         return;
       }
-      if (!shop) {
+      if (!shop_id) {
         showMsg(managerMsg, "请选择绑定店铺", false);
         return;
       }
       const res = await api("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password, shop_name: shop }),
+        body: JSON.stringify({ username, password, shop_id }),
       });
       if (!res.ok) {
         showMsg(managerMsg, await parseError(res), false);
@@ -1204,12 +1243,13 @@
 
   resetQueryBtn.addEventListener("click", () => {
     queryDate.value = todayISO();
-    queryShop.value = isManager() ? managerShopName() : "";
+    queryShopId.value = isManager() ? managerShopId() : "";
     querySupplierId.value = "";
-    renderChipPicker(queryShopPicker, queryShop, shops, {
+    renderChipPicker(queryShopPicker, queryShopId, shops, {
       allowEmpty: !isManager(),
       emptyLabel: "全部店铺",
       keepValue: false,
+      valueKey: "id",
     });
     renderChipPicker(querySupplierPicker, querySupplierId, suppliers, {
       allowEmpty: true,

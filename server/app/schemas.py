@@ -8,16 +8,14 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class OrderCreate(BaseModel):
     order_date: date = Field(..., description="订单日期")
-    shop_name: str = Field(..., min_length=1, max_length=200, description="店铺名")
+    shop_id: int = Field(..., gt=0, description="店铺 ID")
     supplier_id: int = Field(..., gt=0, description="供应商 ID")
     daily_total: float = Field(..., gt=0, description="单日总金额（浮点数）")
 
 
 class OrderUpdate(BaseModel):
     order_date: Optional[date] = Field(None, description="订单日期")
-    shop_name: Optional[str] = Field(
-        None, min_length=1, max_length=200, description="店铺名"
-    )
+    shop_id: Optional[int] = Field(None, gt=0, description="店铺 ID")
     supplier_id: Optional[int] = Field(None, gt=0, description="供应商 ID")
     daily_total: Optional[float] = Field(
         None, gt=0, description="单日总金额（浮点数）"
@@ -30,6 +28,7 @@ class OrderOut(BaseModel):
     id: int
     order_no: str
     order_date: date
+    shop_id: int
     shop_name: str
     supplier_id: int
     supplier_name: str
@@ -49,13 +48,14 @@ class UserOut(BaseModel):
     id: int
     username: str
     role: str = "admin"
+    shop_id: Optional[int] = None
     shop_name: Optional[str] = None
 
 
 class ManagerCreate(BaseModel):
     username: str = Field(..., min_length=1, max_length=64, description="店长用户名")
     password: str = Field(..., min_length=4, max_length=128, description="登录密码")
-    shop_name: str = Field(..., min_length=1, max_length=200, description="绑定店铺")
+    shop_id: int = Field(..., gt=0, description="绑定店铺 ID")
 
 
 class ManagerOut(BaseModel):
@@ -64,6 +64,7 @@ class ManagerOut(BaseModel):
     id: int
     username: str
     role: str
+    shop_id: Optional[int]
     shop_name: Optional[str]
     created_at: datetime
 

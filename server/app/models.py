@@ -33,21 +33,30 @@ class User:
     username: str
     password_hash: str
     role: str
+    shop_id: Optional[int]
     shop_name: Optional[str]
     created_at: datetime
 
     @classmethod
-    def from_doc(cls, doc: Mapping[str, Any]) -> "User":
+    def from_doc(
+        cls,
+        doc: Mapping[str, Any],
+        *,
+        shop_name: Optional[str] = None,
+    ) -> "User":
         role = str(doc.get("role") or ROLE_ADMIN)
         if role not in (ROLE_ADMIN, ROLE_MANAGER):
             role = ROLE_ADMIN
-        shop_name = doc.get("shop_name")
+        raw_shop_id = doc.get("shop_id")
+        shop_id = int(raw_shop_id) if raw_shop_id is not None else None
+        resolved_name = shop_name if shop_name is not None else doc.get("shop_name")
         return cls(
             id=int(doc["_id"]),
             username=doc["username"],
             password_hash=doc["password_hash"],
             role=role,
-            shop_name=str(shop_name).strip() if shop_name else None,
+            shop_id=shop_id,
+            shop_name=str(resolved_name).strip() if resolved_name else None,
             created_at=doc["created_at"],
         )
 
@@ -87,6 +96,7 @@ class SupplierOrder:
     id: int
     order_no: str
     order_date: date
+    shop_id: int
     shop_name: str
     supplier_id: int
     supplier_name: str
@@ -99,6 +109,7 @@ class SupplierOrder:
         cls,
         doc: Mapping[str, Any],
         *,
+        shop_name: Optional[str] = None,
         supplier_name: Optional[str] = None,
     ) -> "SupplierOrder":
         order_date = parse_order_date(doc["order_date"])
@@ -111,16 +122,22 @@ class SupplierOrder:
             else:
                 order_no = f"{order_date.strftime('%Y%m%d')}000000"
             order_no = f"{order_no}-{order_id:02d}"
+        raw_shop_id = doc.get("shop_id")
+        shop_id = int(raw_shop_id) if raw_shop_id is not None else 0
         raw_supplier_id = doc.get("supplier_id")
         supplier_id = int(raw_supplier_id) if raw_supplier_id is not None else 0
-        resolved_name = supplier_name if supplier_name is not None else doc.get("supplier_name")
+        resolved_shop = shop_name if shop_name is not None else doc.get("shop_name")
+        resolved_supplier = (
+            supplier_name if supplier_name is not None else doc.get("supplier_name")
+        )
         return cls(
             id=order_id,
             order_no=str(order_no),
             order_date=order_date,
-            shop_name=doc["shop_name"],
+            shop_id=shop_id,
+            shop_name=str(resolved_shop or ""),
             supplier_id=supplier_id,
-            supplier_name=str(resolved_name or ""),
+            supplier_name=str(resolved_supplier or ""),
             daily_total=float(doc["daily_total"]),
             created_at=doc["created_at"],
             updated_at=doc["updated_at"],
@@ -132,7 +149,7 @@ def build_order_doc(
     order_id: int,
     order_no: str,
     order_date: date,
-    shop_name: str,
+    shop_id: int,
     supplier_id: int,
     daily_total: float,
     created_at: Optional[datetime] = None,
@@ -143,7 +160,7 @@ def build_order_doc(
         "_id": order_id,
         "order_no": order_no,
         "order_date": serialize_order_date(order_date),
-        "shop_name": shop_name,
+        "shop_id": int(shop_id),
         "supplier_id": int(supplier_id),
         "daily_total": float(daily_total),
         "created_at": created_at or now,

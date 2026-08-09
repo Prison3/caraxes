@@ -8,6 +8,7 @@ import secrets
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pymongo.database import Database
 
+from .catalog import user_from_doc
 from .database import get_db
 from .models import User
 from .schemas import LoginIn, UserOut
@@ -61,7 +62,7 @@ def require_user(request: Request, db: Database = Depends(get_db)) -> User:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="未登录",
         )
-    return User.from_doc(doc)
+    return user_from_doc(db, doc)
 
 
 @router.post("/login", response_model=UserOut)
@@ -73,7 +74,7 @@ def login(payload: LoginIn, request: Request, db: Database = Depends(get_db)):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="用户名或密码错误",
         )
-    user = User.from_doc(doc)
+    user = user_from_doc(db, doc)
     request.session[SESSION_KEY] = user.id
     return user
 

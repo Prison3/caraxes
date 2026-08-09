@@ -13,19 +13,20 @@ DEFAULT_MANAGER_PASSWORD = "12345"
 def _ensure_admin_roles(db) -> None:
     db.users.update_many(
         {"role": {"$exists": False}},
-        {"$set": {"role": ROLE_ADMIN, "shop_name": None}},
+        {"$set": {"role": ROLE_ADMIN, "shop_id": None, "shop_name": None}},
     )
     db.users.update_many(
-        {"role": ROLE_ADMIN, "shop_name": {"$exists": False}},
-        {"$set": {"shop_name": None}},
+        {"role": ROLE_ADMIN},
+        {"$set": {"shop_id": None}},
     )
 
 
 def _seed_managers_for_shops(db, now) -> None:
     """为尚无店长的店铺创建默认店长账号（用户名=店铺名，密码见 DEFAULT_MANAGER_PASSWORD）。"""
     for shop in db.shops.find().sort("_id", 1):
+        shop_id = int(shop["_id"])
         shop_name = shop["name"]
-        exists = db.users.find_one({"role": ROLE_MANAGER, "shop_name": shop_name})
+        exists = db.users.find_one({"role": ROLE_MANAGER, "shop_id": shop_id})
         if exists:
             continue
         if db.users.find_one({"username": shop_name}):
@@ -36,6 +37,7 @@ def _seed_managers_for_shops(db, now) -> None:
                 "username": shop_name,
                 "password_hash": hash_password(DEFAULT_MANAGER_PASSWORD),
                 "role": ROLE_MANAGER,
+                "shop_id": shop_id,
                 "shop_name": shop_name,
                 "created_at": now,
             }
@@ -75,6 +77,7 @@ def seed_catalog() -> None:
                 "username": DEFAULT_USERNAME,
                 "password_hash": hash_password(DEFAULT_PASSWORD),
                 "role": ROLE_ADMIN,
+                "shop_id": None,
                 "shop_name": None,
                 "created_at": now,
             }

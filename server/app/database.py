@@ -67,7 +67,11 @@ def _backfill_name_keys(collection) -> None:
 
 
 def ensure_indexes() -> None:
-    from .catalog import migrate_order_supplier_ids
+    from .catalog import (
+        migrate_manager_shop_ids,
+        migrate_order_shop_ids,
+        migrate_order_supplier_ids,
+    )
 
     db = get_database()
     db.users.create_index("username", unique=True)
@@ -78,8 +82,14 @@ def ensure_indexes() -> None:
     db.shops.create_index("name_key", unique=True)
     db.suppliers.create_index("name_key", unique=True)
     migrate_order_supplier_ids(db)
+    migrate_order_shop_ids(db)
+    migrate_manager_shop_ids(db)
     # 允许同日同店同供应商多笔订单；去掉历史唯一索引
-    for old_index in ("uq_date_shop_supplier", "idx_date_shop_supplier"):
+    for old_index in (
+        "uq_date_shop_supplier",
+        "idx_date_shop_supplier",
+        "idx_date_shop_supplier_id",
+    ):
         try:
             db.supplier_orders.drop_index(old_index)
         except Exception:
@@ -87,15 +97,16 @@ def ensure_indexes() -> None:
     db.supplier_orders.create_index(
         [
             ("order_date", ASCENDING),
-            ("shop_name", ASCENDING),
+            ("shop_id", ASCENDING),
             ("supplier_id", ASCENDING),
         ],
-        name="idx_date_shop_supplier_id",
+        name="idx_date_shop_id_supplier_id",
     )
     db.supplier_orders.create_index("order_date")
-    db.supplier_orders.create_index("shop_name")
+    db.supplier_orders.create_index("shop_id")
     db.supplier_orders.create_index("supplier_id")
     db.supplier_orders.create_index("order_no", unique=True, sparse=True)
+    db.users.create_index("shop_id")
     db.deletion_logs.create_index([("deleted_at", ASCENDING), ("_id", ASCENDING)])
 
 
