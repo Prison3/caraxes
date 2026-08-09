@@ -1136,3 +1136,18 @@ html.is-mobile .orders-readable {
   --fs-sm: 0.9375rem;
   --fs-base: 1rem;
 }
+
+.deletion-block {
+  margin-top: 1.75rem;
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+}
+
+.deletion-block .col-kind {
+  white-space: nowrap;
+  width: 4.5rem;
+}
+
+.deletion-block .col-summary {
+  word-break: break-word;
+}

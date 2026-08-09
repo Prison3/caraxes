@@ -5,7 +5,7 @@ import os
 
 from fastapi import Header, HTTPException, status
 
-ADMIN_CONFIRM_PASSWORD = os.environ.get("ADMIN_CONFIRM_PASSWORD", "longcudangjia")
+ADMIN_CONFIRM_PASSWORD = os.environ.get("ADMIN_CONFIRM_PASSWORD", "mei")
 ADMIN_CONFIRM_HEADER = "X-Admin-Confirm"
 
 

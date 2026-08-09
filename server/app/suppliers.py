@@ -8,6 +8,7 @@ from pymongo.errors import DuplicateKeyError
 
 from .confirm import require_admin_confirm
 from .database import get_db, next_id
+from .deletions import record_supplier_deletion
 from .models import Supplier, utcnow
 from .names import normalize_name
 from .schemas import NameCreate, SupplierOut
@@ -55,6 +56,8 @@ def delete_supplier(
     db: Database = Depends(get_db),
     _: None = Depends(require_admin_confirm),
 ):
-    result = db.suppliers.delete_one({"_id": supplier_id})
-    if result.deleted_count == 0:
+    doc = db.suppliers.find_one({"_id": supplier_id})
+    if doc is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="供应商不存在")
+    record_supplier_deletion(db, supplier_id, doc["name"])
+    db.suppliers.delete_one({"_id": supplier_id})

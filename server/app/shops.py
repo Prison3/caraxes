@@ -8,6 +8,7 @@ from pymongo.errors import DuplicateKeyError
 
 from .confirm import require_admin_confirm
 from .database import get_db, next_id
+from .deletions import record_shop_deletion
 from .models import Shop, utcnow
 from .names import normalize_name
 from .schemas import NameCreate, ShopOut
@@ -53,6 +54,8 @@ def delete_shop(
     db: Database = Depends(get_db),
     _: None = Depends(require_admin_confirm),
 ):
-    result = db.shops.delete_one({"_id": shop_id})
-    if result.deleted_count == 0:
+    doc = db.shops.find_one({"_id": shop_id})
+    if doc is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="店铺不存在")
+    record_shop_deletion(db, shop_id, doc["name"])
+    db.shops.delete_one({"_id": shop_id})

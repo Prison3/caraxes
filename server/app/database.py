@@ -91,6 +91,7 @@ def ensure_indexes() -> None:
     db.supplier_orders.create_index("order_date")
     db.supplier_orders.create_index("shop_name")
     db.supplier_orders.create_index("order_no", unique=True, sparse=True)
+    db.deletion_logs.create_index([("deleted_at", ASCENDING), ("_id", ASCENDING)])
 
 
 __all__ = [

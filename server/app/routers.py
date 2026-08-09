@@ -11,6 +11,7 @@ from pymongo.database import Database
 
 from .confirm import require_admin_confirm
 from .database import get_db, next_id, next_order_no
+from .deletions import record_order_deletion
 from .models import SupplierOrder, build_order_doc, serialize_order_date, utcnow
 from .schemas import OrderCreate, OrderOut, OrderUpdate
 
@@ -138,6 +139,8 @@ def delete_order(
     db: Database = Depends(get_db),
     _: None = Depends(require_admin_confirm),
 ):
-    result = db.supplier_orders.delete_one({"_id": order_id})
-    if result.deleted_count == 0:
+    doc = db.supplier_orders.find_one({"_id": order_id})
+    if doc is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="订单不存在")
+    record_order_deletion(db, SupplierOrder.from_doc(doc))
+    db.supplier_orders.delete_one({"_id": order_id})

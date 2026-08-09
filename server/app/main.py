@@ -8,6 +8,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from .auth import get_session_secret, require_user, router as auth_router
 from .database import ensure_indexes
+from .deletions import router as deletions_router
 from .routers import router as orders_router
 from .seed import seed_catalog
 from .shops import router as shops_router
@@ -46,6 +47,7 @@ app.include_router(auth_router)
 app.include_router(orders_router, dependencies=_auth)
 app.include_router(shops_router, dependencies=_auth)
 app.include_router(suppliers_router, dependencies=_auth)
+app.include_router(deletions_router, dependencies=_auth)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
