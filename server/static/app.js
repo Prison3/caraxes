@@ -1065,15 +1065,15 @@
     }
     tr.innerHTML = `
       <td class="col-no"></td>
-      <td class="col-date"></td>
       <td class="col-shop"></td>
+      <td class="col-date"></td>
       <td class="col-supplier"></td>
       <td class="num col-amount"></td>
       ${opsHtml}
     `;
     tr.querySelector(".col-no").textContent = order.order_no || order.id;
-    tr.querySelector(".col-date").textContent = order.order_date;
     tr.querySelector(".col-shop").textContent = order.shop_name;
+    tr.querySelector(".col-date").textContent = order.order_date;
     tr.querySelector(".col-supplier").textContent = order.supplier_name;
     tr.querySelector(".col-amount").textContent = `¥${formatMoney(order.daily_total)}`;
     const editBtn = tr.querySelector(".edit-btn");

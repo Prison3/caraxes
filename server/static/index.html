@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>供应商管理系统</title>
   <script src="/static/device.js?v=2"></script>
-  <link rel="stylesheet" href="/static/style.css?v=20260809m" />
+  <link rel="stylesheet" href="/static/style.css?v=20260810b" />
 </head>
 <body>
   <header class="topbar">
@@ -20,23 +20,22 @@
 
   <main class="wrap">
     <nav id="mainTabs" class="tabs tabs-3" role="tablist">
-      <button type="button" class="tab active" data-tab="create" role="tab" aria-selected="true">录入</button>
       <button type="button" class="tab" data-tab="query" role="tab" aria-selected="false">查询</button>
       <button type="button" class="tab tab-admin" data-tab="manage" role="tab" aria-selected="false">管理</button>
+      <button type="button" class="tab active" data-tab="create" role="tab" aria-selected="true">录入</button>
     </nav>
 
     <section id="panelCreate" class="panel tab-panel active" role="tabpanel">
-      <h2>录入订单</h2>
       <form id="orderForm">
-        <label>
-          日期
-          <input type="date" id="orderDate" name="order_date" required />
-        </label>
         <div class="choice-field">
           <span class="choice-label">店铺名</span>
           <input type="hidden" id="shopId" name="shop_id" value="" />
           <div id="shopPicker" class="chip-grid" role="listbox" aria-label="选择店铺"></div>
         </div>
+        <label>
+          日期
+          <input type="date" id="orderDate" name="order_date" required />
+        </label>
         <div class="choice-field">
           <span class="choice-label">供应商名</span>
           <input type="hidden" id="supplierId" name="supplier_id" value="" />
@@ -60,8 +59,8 @@
             <thead>
               <tr>
                 <th>订单编号</th>
-                <th>日期</th>
                 <th>店铺</th>
+                <th>日期</th>
                 <th>供应商</th>
                 <th class="num">金额</th>
                 <th class="ops">操作</th>
@@ -77,6 +76,11 @@
     <section id="panelQuery" class="panel tab-panel" role="tabpanel" hidden>
       <h2>查询订单</h2>
       <form id="queryForm" class="query-form">
+        <div class="choice-field">
+          <span class="choice-label">店铺名</span>
+          <input type="hidden" id="queryShopId" value="" />
+          <div id="queryShopPicker" class="chip-grid" role="listbox" aria-label="筛选店铺"></div>
+        </div>
         <label class="date-field-label">
           日期
           <div class="date-field">
@@ -115,11 +119,6 @@
           </div>
         </label>
         <div class="choice-field">
-          <span class="choice-label">店铺名</span>
-          <input type="hidden" id="queryShopId" value="" />
-          <div id="queryShopPicker" class="chip-grid" role="listbox" aria-label="筛选店铺"></div>
-        </div>
-        <div class="choice-field">
           <span class="choice-label">供应商名</span>
           <input type="hidden" id="querySupplierId" value="" />
           <div id="querySupplierPicker" class="chip-grid" role="listbox" aria-label="筛选供应商"></div>
@@ -142,8 +141,8 @@
             <thead>
               <tr>
                 <th>订单编号</th>
-                <th>日期</th>
                 <th>店铺</th>
+                <th>日期</th>
                 <th>供应商</th>
                 <th class="num">金额</th>
                 <th class="ops">操作</th>
@@ -278,15 +277,15 @@
       <h3 id="editOrderTitle">修改订单</h3>
       <p id="editOrderMeta" class="edit-order-meta"></p>
       <form id="editOrderForm" class="edit-order-form">
-        <label>
-          日期
-          <input type="date" id="editOrderDate" required />
-        </label>
         <div class="choice-field">
           <span class="choice-label">店铺名</span>
           <input type="hidden" id="editShopId" value="" />
           <div id="editShopPicker" class="chip-grid" role="listbox" aria-label="选择店铺"></div>
         </div>
+        <label>
+          日期
+          <input type="date" id="editOrderDate" required />
+        </label>
         <div class="choice-field">
           <span class="choice-label">供应商名</span>
           <input type="hidden" id="editSupplierId" value="" />
@@ -305,6 +304,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=20260809m"></script>
+  <script src="/static/app.js?v=20260810b"></script>
 </body>
 </html>
