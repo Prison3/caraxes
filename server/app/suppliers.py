@@ -1,15 +1,18 @@
 from __future__ import annotations
 
-from typing import List
+import calendar
+from datetime import date
+from typing import Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pymongo.database import Database
 from pymongo.errors import DuplicateKeyError
 
+from .auth import require_user
 from .confirm import require_admin_confirm
 from .database import get_db, next_id
 from .deletions import record_supplier_deletion
-from .models import Supplier, User, utcnow
+from .models import Supplier, User, serialize_order_date, utcnow
 from .names import normalize_name
 from .roles import require_admin
 from .schemas import NameCreate, SupplierOut
@@ -17,9 +20,61 @@ from .schemas import NameCreate, SupplierOut
 router = APIRouter(prefix="/api/suppliers", tags=["suppliers"])
 
 
+def _current_month_totals(db: Database, supplier_ids: List[int]) -> Dict[int, float]:
+    if not supplier_ids:
+        return {}
+    today = date.today()
+    start = date(today.year, today.month, 1)
+    end = date(today.year, today.month, calendar.monthrange(today.year, today.month)[1])
+    pipeline = [
+        {
+            "$match": {
+                "supplier_id": {"$in": [int(x) for x in supplier_ids]},
+                "order_date": {
+                    "$gte": serialize_order_date(start),
+                    "$lte": serialize_order_date(end),
+                },
+            }
+        },
+        {"$group": {"_id": "$supplier_id", "total": {"$sum": "$daily_total"}}},
+    ]
+    totals: Dict[int, float] = {}
+    for row in db.supplier_orders.aggregate(pipeline):
+        totals[int(row["_id"])] = float(row.get("total") or 0)
+    return totals
+
+
 @router.get("", response_model=List[SupplierOut])
 def list_suppliers(db: Database = Depends(get_db)):
-    return [Supplier.from_doc(doc) for doc in db.suppliers.find().sort("name", 1)]
+    docs = list(db.suppliers.find().sort("name", 1))
+    totals = _current_month_totals(db, [int(d["_id"]) for d in docs])
+    return [
+        SupplierOut(
+            id=int(doc["_id"]),
+            name=doc["name"],
+            created_at=doc["created_at"],
+            month_total=round(totals.get(int(doc["_id"]), 0.0), 2),
+        )
+        for doc in docs
+    ]
+
+
+@router.get("/{supplier_id}", response_model=SupplierOut)
+def get_supplier(
+    supplier_id: int,
+    db: Database = Depends(get_db),
+    _: User = Depends(require_user),
+):
+    doc = db.suppliers.find_one({"_id": supplier_id})
+    if doc is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="供应商不存在")
+    totals = _current_month_totals(db, [supplier_id])
+    return SupplierOut(
+        id=int(doc["_id"]),
+        name=doc["name"],
+        created_at=doc["created_at"],
+        month_total=round(totals.get(supplier_id, 0.0), 2),
+    )
 
 
 @router.post("", response_model=SupplierOut, status_code=status.HTTP_201_CREATED)

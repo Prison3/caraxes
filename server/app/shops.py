@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import List
+import calendar
+from datetime import date
+from typing import Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pymongo.database import Database
@@ -10,12 +12,37 @@ from .auth import require_user
 from .confirm import require_admin_confirm
 from .database import get_db, next_id
 from .deletions import record_shop_deletion
-from .models import Shop, User, utcnow
+from .models import Shop, User, serialize_order_date, utcnow
 from .names import normalize_name
 from .roles import require_admin, scoped_shop_id
 from .schemas import NameCreate, ShopOut
+from .seed import create_default_manager_for_shop
 
 router = APIRouter(prefix="/api/shops", tags=["shops"])
+
+
+def _current_month_totals(db: Database, shop_ids: List[int]) -> Dict[int, float]:
+    if not shop_ids:
+        return {}
+    today = date.today()
+    start = date(today.year, today.month, 1)
+    end = date(today.year, today.month, calendar.monthrange(today.year, today.month)[1])
+    pipeline = [
+        {
+            "$match": {
+                "shop_id": {"$in": [int(x) for x in shop_ids]},
+                "order_date": {
+                    "$gte": serialize_order_date(start),
+                    "$lte": serialize_order_date(end),
+                },
+            }
+        },
+        {"$group": {"_id": "$shop_id", "total": {"$sum": "$daily_total"}}},
+    ]
+    totals: Dict[int, float] = {}
+    for row in db.supplier_orders.aggregate(pipeline):
+        totals[int(row["_id"])] = float(row.get("total") or 0)
+    return totals
 
 
 @router.get("", response_model=List[ShopOut])
@@ -25,7 +52,38 @@ def list_shops(
 ):
     scoped = scoped_shop_id(user)
     query = {"_id": scoped} if scoped is not None else {}
-    return [Shop.from_doc(doc) for doc in db.shops.find(query).sort("name", 1)]
+    docs = list(db.shops.find(query).sort("name", 1))
+    totals = _current_month_totals(db, [int(d["_id"]) for d in docs])
+    return [
+        ShopOut(
+            id=int(doc["_id"]),
+            name=doc["name"],
+            created_at=doc["created_at"],
+            month_total=round(totals.get(int(doc["_id"]), 0.0), 2),
+        )
+        for doc in docs
+    ]
+
+
+@router.get("/{shop_id}", response_model=ShopOut)
+def get_shop(
+    shop_id: int,
+    db: Database = Depends(get_db),
+    user: User = Depends(require_user),
+):
+    scoped = scoped_shop_id(user)
+    if scoped is not None and int(shop_id) != scoped:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="店铺不存在")
+    doc = db.shops.find_one({"_id": shop_id})
+    if doc is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="店铺不存在")
+    totals = _current_month_totals(db, [shop_id])
+    return ShopOut(
+        id=int(doc["_id"]),
+        name=doc["name"],
+        created_at=doc["created_at"],
+        month_total=round(totals.get(shop_id, 0.0), 2),
+    )
 
 
 @router.post("", response_model=ShopOut, status_code=status.HTTP_201_CREATED)
@@ -43,6 +101,11 @@ def create_shop(
             status_code=status.HTTP_409_CONFLICT,
             detail="店铺名不可以重复",
         )
+    if db.users.find_one({"username": name}):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"无法创建店铺：用户名「{name}」已被占用，无法自动创建店长",
+        )
     doc = {
         "_id": next_id(db, "shops"),
         "name": name,
@@ -56,6 +119,19 @@ def create_shop(
             status_code=status.HTTP_409_CONFLICT,
             detail="店铺名不可以重复",
         )
+    try:
+        create_default_manager_for_shop(
+            db,
+            shop_id=int(doc["_id"]),
+            shop_name=name,
+            now=doc["created_at"],
+        )
+    except ValueError as exc:
+        db.shops.delete_one({"_id": doc["_id"]})
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
     return Shop.from_doc(doc)
 
 
@@ -132,9 +208,6 @@ def delete_shop(
         )
     manager_count = db.users.count_documents({"role": "manager", "shop_id": shop_id})
     if manager_count > 0:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"该店铺还有 {manager_count} 个店长账号，无法删除",
-        )
+        db.users.delete_many({"role": "manager", "shop_id": shop_id})
     record_shop_deletion(db, shop_id, doc["name"], operator=user)
     db.shops.delete_one({"_id": shop_id})

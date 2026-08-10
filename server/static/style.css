@@ -71,6 +71,68 @@ body {
   gap: 1rem;
 }
 
+html.is-pc body.role-admin .wrap {
+  max-width: 1480px;
+}
+
+.shop-manage-list {
+  margin-top: 0.85rem;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+html.is-mobile .shop-manage-list {
+  grid-template-columns: 1fr;
+}
+
+html.is-pc .shop-manage-list {
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  gap: 0.85rem;
+}
+
+.shop-manage-card {
+  display: grid;
+  gap: 0.45rem;
+  align-content: start;
+  min-height: 80px;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.shop-manage-head {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.shop-manage-head .name {
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  line-height: 1.3;
+  word-break: break-word;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.shop-manage-head .manager-name {
+  display: block;
+  flex: 0 0 auto;
+  width: auto;
+  max-width: 55%;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--danger, #b91c1c);
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -446,7 +508,7 @@ html.is-mobile .manage-list .delete-btn {
 
 /* PC 端适配：更宽布局，便于展示更多数据 */
 html.is-pc .wrap {
-  max-width: 1080px;
+  max-width: 1480px;
   padding: 1.75rem 1.5rem 2.75rem;
 }
 
@@ -639,6 +701,103 @@ html.is-pc .login-shell {
 
 .section-gap {
   margin-top: 1.75rem !important;
+}
+
+.manage-subhead {
+  margin: 1.25rem 0 0.75rem;
+  font-size: var(--fs-base);
+  font-weight: 600;
+}
+
+.shop-manage-head .manager-name.is-empty {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.shop-manage-head .manager-name.is-disabled {
+  opacity: 0.65;
+  text-decoration: line-through;
+}
+
+.shop-month-row {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.shop-month-total {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--forest, #1b4d3e);
+  line-height: 1.3;
+  min-width: 0;
+}
+
+.icon-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--forest, #1b4d3e);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.icon-refresh-btn:hover {
+  background: rgba(27, 77, 62, 0.08);
+}
+
+.icon-refresh-btn:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.icon-refresh-btn.is-spinning svg {
+  animation: refresh-spin 0.7s linear infinite;
+}
+
+@keyframes refresh-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.shop-manage-card .manage-actions {
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.shop-manage-card .rename-btn,
+.shop-manage-card .delete-btn,
+.shop-manage-card .toggle-btn {
+  border: 0;
+  background: transparent;
+  font-size: var(--fs-xs);
+  cursor: pointer;
+  padding: 0.2rem 0.3rem;
+  min-height: 32px;
+}
+
+.shop-manage-card .rename-btn,
+.shop-manage-card .toggle-btn {
+  color: var(--accent, #2563eb);
+}
+
+.shop-manage-card .toggle-btn.is-enable {
+  color: #15803d;
+}
+
+.shop-manage-card .delete-btn {
+  color: var(--danger);
 }
 
 .inline-form {

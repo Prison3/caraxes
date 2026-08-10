@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>供应商管理系统</title>
   <script src="/static/device.js?v=2"></script>
-  <link rel="stylesheet" href="/static/style.css?v=20260810b" />
+  <link rel="stylesheet" href="/static/style.css?v=20260810s" />
 </head>
 <body>
   <header class="topbar">
@@ -156,32 +156,21 @@
     </section>
 
     <section id="panelManage" class="panel tab-panel" role="tabpanel" hidden>
-      <h2>添加店铺</h2>
+      <h2>店铺管理</h2>
       <form id="shopForm" class="inline-form">
         <input type="text" id="newShopName" placeholder="店铺名称" maxlength="200" required />
         <button type="submit">添加店铺</button>
       </form>
       <p id="shopMsg" class="msg" hidden></p>
-      <div id="shopManageList" class="chip-grid manage-grid" aria-label="店铺列表"></div>
+      <div id="shopManageList" class="chip-grid manage-grid shop-manage-list" aria-label="店铺列表"></div>
 
-      <h2 class="section-gap">添加供应商</h2>
+      <h2 class="section-gap">供应商管理</h2>
       <form id="supplierForm" class="inline-form">
         <input type="text" id="newSupplierName" placeholder="供应商名称" maxlength="200" required />
         <button type="submit">添加供应商</button>
       </form>
       <p id="supplierMsg" class="msg" hidden></p>
-      <div id="supplierManageList" class="chip-grid manage-grid" aria-label="供应商列表"></div>
-
-      <h2 class="section-gap">店长账号</h2>
-      <form id="managerForm" class="manager-form">
-        <input type="text" id="newManagerUsername" placeholder="用户名" maxlength="64" required />
-        <input type="password" id="newManagerPassword" placeholder="密码" maxlength="128" required />
-        <input type="hidden" id="newManagerShop" value="" />
-        <div id="newManagerShopPicker" class="chip-grid" role="listbox" aria-label="绑定店铺"></div>
-        <button type="submit">添加店长</button>
-      </form>
-      <p id="managerMsg" class="msg" hidden></p>
-      <div id="managerManageList" class="manager-list" aria-label="店长列表"></div>
+      <div id="supplierManageList" class="chip-grid manage-grid shop-manage-list" aria-label="供应商列表"></div>
 
       <div class="recent-block orders-readable deletion-block">
         <div class="list-head">
@@ -304,6 +293,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=20260810b"></script>
+  <script src="/static/app.js?v=20260810t"></script>
 </body>
 </html>

@@ -90,6 +90,7 @@ class ShopOut(BaseModel):
     id: int
     name: str
     created_at: datetime
+    month_total: float = 0.0
 
 
 class SupplierOut(BaseModel):
@@ -98,3 +99,4 @@ class SupplierOut(BaseModel):
     id: int
     name: str
     created_at: datetime
+    month_total: float = 0.0

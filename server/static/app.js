@@ -56,14 +56,6 @@
   const supplierMsg = document.getElementById("supplierMsg");
   const supplierManageList = document.getElementById("supplierManageList");
 
-  const managerForm = document.getElementById("managerForm");
-  const newManagerUsername = document.getElementById("newManagerUsername");
-  const newManagerPassword = document.getElementById("newManagerPassword");
-  const newManagerShop = document.getElementById("newManagerShop");
-  const newManagerShopPicker = document.getElementById("newManagerShopPicker");
-  const managerMsg = document.getElementById("managerMsg");
-  const managerManageList = document.getElementById("managerManageList");
-
   const deletionList = document.getElementById("deletionList");
   const deletionTableWrap = document.getElementById("deletionTableWrap");
   const deletionEmpty = document.getElementById("deletionEmpty");
@@ -163,67 +155,187 @@
     queryShopPicker?.closest(".choice-field")?.classList.add("is-locked");
   }
 
-  function renderManagers(items) {
-    if (!managerManageList) return;
-    managerManageList.innerHTML = "";
-    if (!items.length) {
+  function refreshIconHtml() {
+    return `<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+      <path d="M20 12a8 8 0 1 1-2.2-5.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+      <path d="M20 5v5h-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
+  }
+
+  function makeRefreshTotalBtn(onClick) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "icon-refresh-btn";
+    btn.setAttribute("aria-label", "刷新本月金额");
+    btn.title = "刷新本月金额";
+    btn.innerHTML = refreshIconHtml();
+    btn.addEventListener("click", async () => {
+      if (btn.disabled) return;
+      btn.disabled = true;
+      btn.classList.add("is-spinning");
+      try {
+        await onClick();
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove("is-spinning");
+      }
+    });
+    return btn;
+  }
+
+  async function refreshShopMonthTotal(shopId, totalEl, msgEl) {
+    const res = await api(`/api/shops/${shopId}`);
+    if (!res.ok) throw new Error(await parseError(res));
+    const shop = await res.json();
+    const idx = shops.findIndex((s) => Number(s.id) === Number(shopId));
+    if (idx >= 0) {
+      shops[idx] = { ...shops[idx], month_total: shop.month_total };
+    }
+    if (totalEl) {
+      totalEl.textContent = `本月 ¥${formatMoney(Number(shop.month_total || 0))}`;
+    }
+    if (msgEl) showMsg(msgEl, "本月金额已刷新", true);
+  }
+
+  async function refreshSupplierMonthTotal(supplierId, totalEl, msgEl) {
+    const res = await api(`/api/suppliers/${supplierId}`);
+    if (!res.ok) throw new Error(await parseError(res));
+    const item = await res.json();
+    const idx = suppliers.findIndex((s) => Number(s.id) === Number(supplierId));
+    if (idx >= 0) {
+      suppliers[idx] = { ...suppliers[idx], month_total: item.month_total };
+    }
+    if (totalEl) {
+      totalEl.textContent = `本月 ¥${formatMoney(Number(item.month_total || 0))}`;
+    }
+    if (msgEl) showMsg(msgEl, "本月金额已刷新", true);
+  }
+
+  function renderShopManageList() {
+    if (!shopManageList) return;
+    shopManageList.innerHTML = "";
+    if (!shops.length) {
       const empty = document.createElement("p");
       empty.className = "chip-empty";
-      empty.textContent = "暂无店长账号";
-      managerManageList.appendChild(empty);
+      empty.textContent = "暂无店铺";
+      shopManageList.appendChild(empty);
       return;
     }
-    for (const item of items) {
-      const disabled = Boolean(item.disabled);
-      const row = document.createElement("div");
-      row.className = "manager-row" + (disabled ? " is-disabled" : "");
-      row.innerHTML = `
-        <div class="meta">
+    for (const shop of shops) {
+      const shopManagers = managers.filter((m) => Number(m.shop_id) === Number(shop.id));
+      const card = document.createElement("div");
+      card.className = "shop-manage-card";
+      card.innerHTML = `
+        <div class="shop-manage-head">
           <span class="name"></span>
-          <span class="shop"></span>
+          <span class="manager-name"></span>
         </div>
-        <div class="manager-actions">
-          <button type="button" class="toggle-btn"></button>
+        <div class="shop-month-row">
+          <span class="shop-month-total"></span>
+        </div>
+        <div class="manage-actions"></div>
+      `;
+      card.querySelector(".name").textContent = shop.name;
+      const totalEl = card.querySelector(".shop-month-total");
+      const monthTotal = Number(shop.month_total || 0);
+      totalEl.textContent = `本月 ¥${formatMoney(monthTotal)}`;
+      card.querySelector(".shop-month-row").appendChild(
+        makeRefreshTotalBtn(async () => {
+          try {
+            await refreshShopMonthTotal(shop.id, totalEl, shopMsg);
+          } catch (err) {
+            showMsg(shopMsg, err.message || "刷新失败", false);
+          }
+        })
+      );
+      const managerNameEl = card.querySelector(".manager-name");
+      if (shopManagers.length) {
+        managerNameEl.textContent = `店长：${shopManagers.map((m) => m.username).join("、")}`;
+        if (shopManagers.every((m) => m.disabled)) {
+          managerNameEl.classList.add("is-disabled");
+        }
+      } else {
+        managerNameEl.textContent = "暂无店长";
+        managerNameEl.classList.add("is-empty");
+      }
+      const actions = card.querySelector(".manage-actions");
+      for (const mgr of shopManagers) {
+        const toggleBtn = document.createElement("button");
+        toggleBtn.type = "button";
+        toggleBtn.className = "toggle-btn" + (mgr.disabled ? " is-enable" : "");
+        toggleBtn.textContent = mgr.disabled ? "启用" : "禁用";
+        toggleBtn.addEventListener("click", () => toggleManagerDisabled(mgr));
+        actions.appendChild(toggleBtn);
+      }
+      const renameBtn = document.createElement("button");
+      renameBtn.type = "button";
+      renameBtn.className = "rename-btn";
+      renameBtn.textContent = "改名";
+      renameBtn.addEventListener("click", () => renameShop(shop));
+      actions.appendChild(renameBtn);
+      const deleteBtn = document.createElement("button");
+      deleteBtn.type = "button";
+      deleteBtn.className = "delete-btn";
+      deleteBtn.textContent = "删除";
+      deleteBtn.addEventListener("click", () => deleteShop(shop));
+      actions.appendChild(deleteBtn);
+      shopManageList.appendChild(card);
+    }
+  }
+
+  function renderSupplierManageList() {
+    if (!supplierManageList) return;
+    supplierManageList.innerHTML = "";
+    if (!suppliers.length) {
+      const empty = document.createElement("p");
+      empty.className = "chip-empty";
+      empty.textContent = "暂无供应商";
+      supplierManageList.appendChild(empty);
+      return;
+    }
+    for (const item of suppliers) {
+      const card = document.createElement("div");
+      card.className = "shop-manage-card";
+      card.innerHTML = `
+        <div class="shop-manage-head">
+          <span class="name"></span>
+        </div>
+        <div class="shop-month-row">
+          <span class="shop-month-total"></span>
+        </div>
+        <div class="manage-actions">
+          <button type="button" class="rename-btn">改名</button>
           <button type="button" class="delete-btn">删除</button>
         </div>
       `;
-      const nameEl = row.querySelector(".name");
-      nameEl.textContent = item.username;
-      if (disabled) {
-        const badge = document.createElement("span");
-        badge.className = "disabled-badge";
-        badge.textContent = "已禁用";
-        nameEl.appendChild(document.createTextNode(" "));
-        nameEl.appendChild(badge);
-      }
-      row.querySelector(".shop").textContent = `店铺：${item.shop_name || "-"}`;
-      const toggleBtn = row.querySelector(".toggle-btn");
-      toggleBtn.textContent = disabled ? "启用" : "禁用";
-      toggleBtn.classList.toggle("is-enable", disabled);
-      toggleBtn.addEventListener("click", () => toggleManagerDisabled(item));
-      row.querySelector(".delete-btn").addEventListener("click", () => deleteManager(item));
-      managerManageList.appendChild(row);
+      card.querySelector(".name").textContent = item.name;
+      const totalEl = card.querySelector(".shop-month-total");
+      const monthTotal = Number(item.month_total || 0);
+      totalEl.textContent = `本月 ¥${formatMoney(monthTotal)}`;
+      card.querySelector(".shop-month-row").appendChild(
+        makeRefreshTotalBtn(async () => {
+          try {
+            await refreshSupplierMonthTotal(item.id, totalEl, supplierMsg);
+          } catch (err) {
+            showMsg(supplierMsg, err.message || "刷新失败", false);
+          }
+        })
+      );
+      card.querySelector(".rename-btn").addEventListener("click", () => renameSupplier(item));
+      card.querySelector(".delete-btn").addEventListener("click", () => deleteSupplier(item));
+      supplierManageList.appendChild(card);
     }
   }
 
   async function loadManagers() {
     if (!isAdmin()) {
       managers = [];
-      renderManagers([]);
       return;
     }
     const res = await api("/api/users");
     if (!res.ok) throw new Error(await parseError(res));
     managers = await res.json();
-    renderManagers(managers);
-    if (newManagerShopPicker) {
-      renderChipPicker(newManagerShopPicker, newManagerShop, shops, {
-        allowEmpty: false,
-        emptyHint: "请先添加店铺",
-        keepValue: true,
-        valueKey: "id",
-      });
-    }
+    renderShopManageList();
   }
 
   async function toggleManagerDisabled(item) {
@@ -243,25 +355,10 @@
       body: JSON.stringify({ disabled: willDisable }),
     });
     if (!res.ok) {
-      showMsg(managerMsg, await parseError(res), false);
+      showMsg(shopMsg, await parseError(res), false);
       return;
     }
-    showMsg(managerMsg, `店长已${action}`, true);
-    await loadManagers();
-  }
-
-  async function deleteManager(item) {
-    const password = await confirmDelete(`确认删除店长「${item.username}」？`);
-    if (!password) return;
-    const res = await api(`/api/users/${item.id}`, {
-      method: "DELETE",
-      headers: adminConfirmHeaders(password),
-    });
-    if (!res.ok && res.status !== 204) {
-      showMsg(managerMsg, await parseError(res), false);
-      return;
-    }
-    showMsg(managerMsg, "店长已删除", true);
+    showMsg(shopMsg, `店长已${action}`, true);
     await loadManagers();
   }
 
@@ -804,20 +901,7 @@
     lockShopPickers();
 
     if (isAdmin()) {
-      renderManageGrid(
-        shopManageList,
-        shops,
-        deleteShop,
-        "暂无店铺",
-        renameShop
-      );
-      renderManageGrid(
-        supplierManageList,
-        suppliers,
-        deleteSupplier,
-        "暂无供应商",
-        renameSupplier
-      );
+      renderSupplierManageList();
       await Promise.all([loadManagers(), loadDeletions()]);
     }
   }
@@ -1316,7 +1400,7 @@
       return;
     }
     newShopName.value = "";
-    showMsg(shopMsg, "店铺已添加", true);
+    showMsg(shopMsg, "店铺已添加，店长账号已自动创建（用户名=店名，密码 12345）", true);
     await loadCatalog();
   });
 
@@ -1345,41 +1429,6 @@
     showMsg(supplierMsg, "供应商已添加", true);
     await loadCatalog();
   });
-
-  if (managerForm) {
-    managerForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      hideMsg(managerMsg);
-      const username = newManagerUsername.value.trim();
-      const password = newManagerPassword.value;
-      const shop_id = Number(newManagerShop.value);
-      if (!username) {
-        showMsg(managerMsg, "请输入用户名", false);
-        return;
-      }
-      if (!password || password.length < 4) {
-        showMsg(managerMsg, "密码至少 4 位", false);
-        return;
-      }
-      if (!shop_id) {
-        showMsg(managerMsg, "请选择绑定店铺", false);
-        return;
-      }
-      const res = await api("/api/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password, shop_id }),
-      });
-      if (!res.ok) {
-        showMsg(managerMsg, await parseError(res), false);
-        return;
-      }
-      newManagerUsername.value = "";
-      newManagerPassword.value = "";
-      showMsg(managerMsg, "店长已添加", true);
-      await loadManagers();
-    });
-  }
 
   queryForm.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -1579,7 +1628,9 @@
     currentUserInfo = await meRes.json();
     currentUser.textContent = currentUserInfo.username;
     applyRoleUi();
-    await Promise.all([loadCatalog(), loadRecentOrders()]);
+    // 管理员默认进管理页，店长默认进录入页
+    switchTab(isAdmin() ? "manage" : "create");
+    await loadCatalog();
   })().catch((err) => {
     if (err.message !== "未登录") {
       showMsg(formMsg, err.message || "加载失败", false);
