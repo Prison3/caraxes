@@ -25,7 +25,7 @@ def list_shops(
 ):
     scoped = scoped_shop_id(user)
     query = {"_id": scoped} if scoped is not None else {}
-    return [Shop.from_doc(doc) for doc in db.shops.find(query).sort("_id", 1)]
+    return [Shop.from_doc(doc) for doc in db.shops.find(query).sort("name", 1)]
 
 
 @router.post("", response_model=ShopOut, status_code=status.HTTP_201_CREATED)

@@ -19,7 +19,7 @@ router = APIRouter(prefix="/api/suppliers", tags=["suppliers"])
 
 @router.get("", response_model=List[SupplierOut])
 def list_suppliers(db: Database = Depends(get_db)):
-    return [Supplier.from_doc(doc) for doc in db.suppliers.find().sort("_id", 1)]
+    return [Supplier.from_doc(doc) for doc in db.suppliers.find().sort("name", 1)]
 
 
 @router.post("", response_model=SupplierOut, status_code=status.HTTP_201_CREATED)
