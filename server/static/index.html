@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>龙厨当家</title>
   <script src="/static/device.js?v=2"></script>
-  <link rel="stylesheet" href="/static/style.css?v=20260825e" />
+  <link rel="stylesheet" href="/static/style.css?v=20260825f" />
 </head>
 <body>
   <header class="topbar">
@@ -228,7 +228,7 @@
 
     <section id="panelCost" class="panel tab-panel" role="tabpanel" hidden>
       <h2>成本</h2>
-      <p class="section-lead">按店铺或供应商查看日 / 月采购金额</p>
+      <p class="section-lead">按店铺或供应商查看；按日为当月每日柱状，按月为当年每月柱状</p>
       <form id="costForm" class="query-form card">
         <div class="choice-field">
           <span class="choice-label">查看</span>
@@ -258,6 +258,13 @@
       </form>
       <p id="costMsg" class="msg" hidden></p>
       <div class="orders-readable query-results">
+        <div class="list-head cost-chart-head">
+          <h3 id="costChartTitle">日柱状</h3>
+          <span id="costChartMeta" class="meta"></span>
+        </div>
+        <div id="costChartCard" class="cost-chart-card" hidden>
+          <div id="costChart" class="cost-chart" role="img" aria-label="成本柱状图"></div>
+        </div>
         <div class="list-head">
           <h3>成本汇总</h3>
           <span id="costListMeta" class="meta"></span>
@@ -420,6 +427,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=20260825e"></script>
+  <script src="/static/app.js?v=20260825f"></script>
 </body>
 </html>

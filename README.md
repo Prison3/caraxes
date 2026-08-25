@@ -81,7 +81,7 @@ Web 提交页：`http://127.0.0.1:8000/`
 | `GET` | `/api/suppliers` | 供应商列表 |
 | `POST` | `/api/suppliers` | 添加供应商 `{"name":"蔬菜"}` |
 | `DELETE` | `/api/suppliers/{id}` | 删除供应商 |
-| `GET` | `/api/costs` | 成本汇总（管理员；`group_by=shop|supplier`，`period=day|month`） |
+| `GET` | `/api/costs` | 成本汇总（管理员；`group_by=shop|supplier`，`period=day|month`；返回当日/当月明细和日/月柱状 `buckets`） |
 | `POST` | `/api/users` | 添加店长 |
 | `PUT` | `/api/users/{id}` | 更新店长用户名/密码/店铺 |
 | `PUT` | `/api/users/{id}/disabled` | 启用/禁用店长 |

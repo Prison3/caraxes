@@ -115,6 +115,13 @@ class CostItem(BaseModel):
     count: int = 0
 
 
+class CostBucket(BaseModel):
+    key: str
+    label: str
+    total: float
+    count: int = 0
+
+
 class CostReportOut(BaseModel):
     group_by: str
     period: str
@@ -122,7 +129,9 @@ class CostReportOut(BaseModel):
     date_to: date
     total: float
     count: int = 0
+    selected: str = ""
     items: List[CostItem] = []
+    buckets: List[CostBucket] = []
 
 
 class AppReleaseOut(BaseModel):

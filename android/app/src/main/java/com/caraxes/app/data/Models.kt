@@ -101,6 +101,13 @@ data class CostItem(
     val count: Int = 0,
 )
 
+data class CostBucket(
+    val key: String = "",
+    val label: String = "",
+    val total: Double = 0.0,
+    val count: Int = 0,
+)
+
 data class CostReportOut(
     val group_by: String = "shop",
     val period: String = "month",
@@ -108,7 +115,9 @@ data class CostReportOut(
     val date_to: String = "",
     val total: Double = 0.0,
     val count: Int = 0,
+    val selected: String = "",
     val items: List<CostItem> = emptyList(),
+    val buckets: List<CostBucket> = emptyList(),
 )
 
 data class DeletionOut(

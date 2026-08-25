@@ -15,7 +15,7 @@
 
     <TextView
         style="@style/Text.PageSubtitle"
-        android:text="按店铺或供应商查看日 / 月采购金额" />
+        android:text="按店铺或供应商查看；按日为当月每日柱状，按月为当年每月柱状" />
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
@@ -125,6 +125,21 @@
                     android:layout_marginTop="8dp"
                     android:textSize="13sp" />
             </LinearLayout>
+
+            <TextView
+                android:id="@+id/chartTitle"
+                style="@style/Text.SectionTitle"
+                android:layout_width="match_parent"
+                android:layout_weight="0"
+                android:layout_marginTop="16dp"
+                android:text="日柱状" />
+
+            <com.caraxes.app.ui.cost.CostBarChartView
+                android:id="@+id/chart"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_card" />
 
             <LinearLayout
                 android:layout_width="match_parent"

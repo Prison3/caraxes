@@ -61,6 +61,12 @@ class CostFragment : Fragment() {
             }
         }
         binding.queryBtn.setOnClickListener { query() }
+        binding.chart.onBarClick = { bar ->
+            if (started && bar.key.isNotBlank() && bar.key != binding.periodValue.text?.toString()) {
+                binding.periodValue.setText(bar.key)
+                query()
+            }
+        }
         started = true
         query()
     }
@@ -135,5 +141,17 @@ class CostFragment : Fragment() {
             binding.sumMeta.isVisible = true
             binding.sumMeta.text = "合计 ${report.count} 笔  ·  ¥${formatMoney(report.total)}"
         }
+        val selected = report.selected.ifBlank { binding.periodValue.text?.toString().orEmpty() }
+        binding.chartTitle.text = if (isMonth()) {
+            val year = selected.take(4).ifBlank { currentMonth().take(4) }
+            "月柱状 · ${year}年"
+        } else {
+            val month = selected.take(7).ifBlank { currentMonth() }
+            val parts = month.split("-")
+            if (parts.size == 2) "日柱状 · ${parts[0]}年${parts[1].toInt()}月" else "日柱状"
+        }
+        binding.chart.submit(report.buckets, selected)
+        binding.chart.isVisible = report.buckets.isNotEmpty()
+        binding.chartTitle.isVisible = report.buckets.isNotEmpty()
     }
 }

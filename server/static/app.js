@@ -89,8 +89,13 @@
   const costNameHead = document.getElementById("costNameHead");
   const costList = document.getElementById("costList");
   const costEmpty = document.getElementById("costEmpty");
+  const costChartTitle = document.getElementById("costChartTitle");
+  const costChartMeta = document.getElementById("costChartMeta");
+  const costChartCard = document.getElementById("costChartCard");
+  const costChart = document.getElementById("costChart");
   let costGroupBy = "shop";
   let costPeriod = "month";
+  let lastCostReport = null;
 
   const deletionList = document.getElementById("deletionList");
   const deletionTableWrap = document.getElementById("deletionTableWrap");
@@ -1087,6 +1092,7 @@
   }
 
   function renderCostReport(report) {
+    lastCostReport = report;
     const items = report.items || [];
     const kind = report.group_by === "supplier" ? "供应商" : "店铺";
     if (costNameHead) costNameHead.textContent = kind;
@@ -1117,6 +1123,111 @@
       tr.querySelector(".col-amount").textContent = `¥${formatMoney(item.total || 0)}`;
       costList.appendChild(tr);
     }
+    renderCostChart(report);
+  }
+
+  function renderCostChart(report) {
+    const buckets = report.buckets || [];
+    const selected = report.selected || (costPeriod === "month" ? costMonth?.value : costDate?.value) || "";
+    if (costPeriod === "month") {
+      const year = String(selected || "").slice(0, 4);
+      if (costChartTitle) costChartTitle.textContent = year ? `月柱状 · ${year}年` : "月柱状";
+    } else {
+      const parts = String(selected || "").split("-");
+      if (costChartTitle) {
+        costChartTitle.textContent = parts.length >= 2
+          ? `日柱状 · ${parts[0]}年${Number(parts[1])}月`
+          : "日柱状";
+      }
+    }
+    if (costChartMeta) costChartMeta.textContent = buckets.length ? "点击柱子切换" : "";
+    if (costChartCard) costChartCard.hidden = buckets.length === 0;
+    if (!costChart) return;
+    costChart.innerHTML = "";
+    if (!buckets.length) return;
+
+    const width = Math.max(costChart.clientWidth || 0, 320);
+    const height = 200;
+    const padT = 22;
+    const padB = 28;
+    const padL = 6;
+    const padR = 6;
+    const innerW = width - padL - padR;
+    const innerH = height - padT - padB;
+    const n = buckets.length;
+    const gap = Math.min(6, innerW / n * 0.22);
+    const barW = Math.max(2, (innerW - gap * (n + 1)) / n);
+    const maxVal = Math.max(0.01, ...buckets.map((b) => Number(b.total) || 0));
+    const dense = n > 16;
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+    svg.setAttribute("width", "100%");
+    svg.setAttribute("height", String(height));
+    const axis = document.createElementNS(ns, "line");
+    axis.setAttribute("x1", String(padL));
+    axis.setAttribute("x2", String(width - padR));
+    axis.setAttribute("y1", String(height - padB));
+    axis.setAttribute("y2", String(height - padB));
+    axis.setAttribute("class", "cost-chart-axis");
+    svg.appendChild(axis);
+
+    buckets.forEach((bucket, i) => {
+      const total = Number(bucket.total) || 0;
+      const left = padL + gap + i * (barW + gap);
+      const h = (total / maxVal) * innerH;
+      const top = height - padB - (total > 0 ? Math.max(2, h) : 0);
+      const isSel = bucket.key === selected;
+      const rect = document.createElementNS(ns, "rect");
+      rect.setAttribute("x", String(left));
+      rect.setAttribute("y", String(top));
+      rect.setAttribute("width", String(barW));
+      rect.setAttribute("height", String(Math.max(0, height - padB - top)));
+      rect.setAttribute("rx", "3");
+      rect.setAttribute("class", isSel ? "cost-bar is-selected" : (total > 0 ? "cost-bar" : "cost-bar is-empty"));
+      rect.setAttribute("tabindex", "0");
+      rect.setAttribute("role", "button");
+      rect.setAttribute("aria-label", `${bucket.label} ¥${formatMoney(total)}`);
+      const title = document.createElementNS(ns, "title");
+      title.textContent = `${bucket.label}  ¥${formatMoney(total)}  ·  ${bucket.count || 0} 笔`;
+      rect.appendChild(title);
+      const selectBar = () => {
+        if (!bucket.key || bucket.key === selected) return;
+        if (costPeriod === "month") {
+          if (costMonth) costMonth.value = bucket.key;
+        } else if (costDate) {
+          costDate.value = bucket.key;
+        }
+        loadCosts();
+      };
+      rect.addEventListener("click", selectBar);
+      rect.addEventListener("keydown", (ev) => {
+        if (ev.key === "Enter" || ev.key === " ") {
+          ev.preventDefault();
+          selectBar();
+        }
+      });
+      svg.appendChild(rect);
+
+      const showLabel = !dense || i === 0 || i === n - 1 || (i + 1) % 5 === 0 || isSel;
+      if (showLabel) {
+        const text = document.createElementNS(ns, "text");
+        text.setAttribute("x", String(left + barW / 2));
+        text.setAttribute("y", String(height - 10));
+        text.setAttribute("class", "cost-chart-label");
+        text.textContent = String(bucket.label || "").replace(/日$|月$/, "");
+        svg.appendChild(text);
+      }
+      if (isSel && total > 0) {
+        const value = document.createElementNS(ns, "text");
+        value.setAttribute("x", String(left + barW / 2));
+        value.setAttribute("y", String(top - 6));
+        value.setAttribute("class", "cost-chart-value");
+        value.textContent = String(Math.round(total));
+        svg.appendChild(value);
+      }
+    });
+    costChart.appendChild(svg);
   }
 
   function canEditOrders() {
@@ -1865,6 +1976,9 @@
   if (costDate) costDate.value = todayISO();
   if (costMonth) costMonth.value = currentMonthISO();
   applyCostPeriodUi();
+  window.addEventListener("resize", () => {
+    if (lastCostReport && panelCost && !panelCost.hidden) renderCostChart(lastCostReport);
+  });
 
   (async () => {
     const meRes = await api("/api/auth/me");
