@@ -17,6 +17,8 @@ data class UserOut(
     val shop_id: Int? = null,
     val shop_name: String? = null,
     val disabled: Boolean = false,
+    val impersonating: Boolean = false,
+    val origin_username: String? = null,
 ) {
     val isAdmin: Boolean get() = role != Session.ROLE_MANAGER
     val roleLabel: String

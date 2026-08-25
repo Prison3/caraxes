@@ -29,6 +29,7 @@ import com.caraxes.app.ui.showMsg
 import com.caraxes.app.ui.shopsToChoices
 import com.caraxes.app.ui.suppliersToChoices
 import com.caraxes.app.ui.todayIso
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 class QueryFragment : Fragment() {
@@ -37,6 +38,8 @@ class QueryFragment : Fragment() {
     private var selectedShopId: Int? = null
     private var selectedSupplierId: Int? = null
     private lateinit var adapter: OrderAdapter
+    private var queryJob: Job? = null
+    private var ready = false
 
     private enum class DateMode { DAY, RANGE, MONTH }
 
@@ -65,23 +68,26 @@ class QueryFragment : Fragment() {
                     else -> DateMode.DAY
                 },
             )
+            if (ready) query()
         }
         binding.dateFrom.setOnClickListener {
             when (currentMode()) {
                 DateMode.MONTH -> pickMonth(binding.dateFrom.text?.toString().orEmpty().ifBlank { currentMonth() }) {
                     binding.dateFrom.setText(it)
+                    query()
                 }
                 else -> pickDate(binding.dateFrom.text?.toString().orEmpty().ifBlank { todayIso() }) {
                     binding.dateFrom.setText(it)
+                    query()
                 }
             }
         }
         binding.dateTo.setOnClickListener {
             pickDate(binding.dateTo.text?.toString().orEmpty().ifBlank { todayIso() }) {
                 binding.dateTo.setText(it)
+                query()
             }
         }
-        binding.queryBtn.setOnClickListener { query() }
         binding.resetBtn.setOnClickListener { reset() }
         loadCatalog(thenQuery = true)
     }
@@ -92,6 +98,7 @@ class QueryFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        queryJob?.cancel()
         super.onDestroyView()
         _binding = null
     }
@@ -129,8 +136,10 @@ class QueryFragment : Fragment() {
             try {
                 Catalog.refresh(ApiClient.get(requireContext()))
                 bindPickers()
+                ready = true
                 if (thenQuery) query()
             } catch (e: Exception) {
+                ready = true
                 showMsg(binding.queryMsg, fail(e), false)
             }
         }
@@ -143,12 +152,12 @@ class QueryFragment : Fragment() {
             shopsToChoices(Catalog.shops, allowEmpty = !locked),
             selectedShopId,
             locked = locked,
-        ) { selectedShopId = it }
+        ) { selectedShopId = it; if (ready) query() }
         binding.supplierChips.bindChoices(
             suppliersToChoices(Catalog.suppliers, allowEmpty = true),
             selectedSupplierId,
             locked = false,
-        ) { selectedSupplierId = it }
+        ) { selectedSupplierId = it; if (ready) query() }
     }
 
     private fun reset() {
@@ -169,9 +178,9 @@ class QueryFragment : Fragment() {
         val supplierId = selectedSupplierId ?: binding.supplierChips.selectedChoiceId()
         val from = binding.dateFrom.text?.toString().orEmpty()
         val to = binding.dateTo.text?.toString().orEmpty()
-        binding.queryBtn.isEnabled = false
         binding.listMeta.text = "加载中…"
-        viewLifecycleOwner.lifecycleScope.launch {
+        queryJob?.cancel()
+        queryJob = viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val api = ApiClient.get(requireContext())
                 val list = when (currentMode()) {
@@ -200,11 +209,11 @@ class QueryFragment : Fragment() {
                     )
                 }
                 render(list)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 render(emptyList())
                 showMsg(binding.queryMsg, fail(e), false)
-            } finally {
-                _binding?.queryBtn?.isEnabled = true
             }
         }
     }

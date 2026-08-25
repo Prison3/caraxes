@@ -5,7 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
-import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -17,6 +17,7 @@ import com.caraxes.app.data.ManagerDisabledIn
 import com.caraxes.app.data.ManagerOut
 import com.caraxes.app.databinding.FragmentStaffBinding
 import com.caraxes.app.ui.clearMsg
+import com.caraxes.app.ui.enterAccount
 import com.caraxes.app.ui.fail
 import com.caraxes.app.ui.promptPassword
 import com.caraxes.app.ui.showMsg
@@ -36,6 +37,7 @@ class StaffFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         adapter = StaffAdapter(
             onEdit = { openEditor(it) },
+            onLogin = { confirmSwitch(it) },
             onToggle = { toggle(it) },
             onDelete = { confirmDelete(it) },
         )
@@ -89,10 +91,31 @@ class StaffFragment : Fragment() {
         findNavController().navigate(R.id.staffEditFragment, StaffEditFragment.args(item))
     }
 
+    private fun confirmSwitch(item: ManagerOut) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("切换登录")
+            .setMessage("以「${item.username}」（店长）登录？之后可在「我的」返回管理员。")
+            .setNegativeButton("取消", null)
+            .setPositiveButton("切换") { _, _ -> switchTo(item) }
+            .show()
+    }
+
+    private fun switchTo(item: ManagerOut) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val user = ApiClient.get(requireContext()).loginAsManager(item.id)
+                showMsg(binding.staffMsg, "已切换到 ${user.username}", true)
+                enterAccount(user)
+            } catch (e: Exception) {
+                showMsg(binding.staffMsg, fail(e), false)
+            }
+        }
+    }
+
     private fun toggle(item: ManagerOut) {
         val willDisable = !item.disabled
         val action = if (willDisable) "禁用" else "启用"
-        AlertDialog.Builder(requireContext())
+        MaterialAlertDialogBuilder(requireContext())
             .setTitle("${action}店长")
             .setMessage("确认${action}店长「${item.username}」？")
             .setPositiveButton("确定$action") { _, _ ->

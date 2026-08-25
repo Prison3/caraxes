@@ -18,6 +18,8 @@
         <item name="android:windowBackground">@color/paper</item>
         <item name="materialButtonStyle">@style/Widget.Caraxes.Button</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.Caraxes.Dialog</item>
+        <item name="alertDialogTheme">@style/ThemeOverlay.Caraxes.Dialog</item>
+        <item name="dialogCornerRadius">24dp</item>
         <item name="chipStyle">@style/Widget.Caraxes.Chip</item>
     </style>
 
@@ -85,8 +87,28 @@
         <item name="colorPrimary">@color/pine</item>
         <item name="colorSurface">@color/paper2</item>
         <item name="colorOnSurface">@color/ink</item>
-        <item name="buttonBarPositiveButtonStyle">@style/Widget.Caraxes.Button</item>
-        <item name="buttonBarNegativeButtonStyle">@style/Widget.Caraxes.Button.Ghost</item>
+        <item name="android:windowBackground">@drawable/bg_dialog</item>
+        <item name="dialogCornerRadius">24dp</item>
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearance.Caraxes.Dialog</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.Caraxes.Dialog.Positive</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.Caraxes.Dialog.Negative</item>
+    </style>
+
+    <style name="ShapeAppearance.Caraxes.Dialog" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">24dp</item>
+    </style>
+
+    <style name="Widget.Caraxes.Dialog.Positive" parent="Widget.Material3.Button.TextButton.Dialog">
+        <item name="android:textColor">@color/pine</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="Widget.Caraxes.Dialog.Negative" parent="Widget.Material3.Button.TextButton.Dialog">
+        <item name="android:textColor">@color/ink_soft</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:letterSpacing">0</item>
     </style>
 
     <style name="Widget.Caraxes.Chip" parent="Widget.Material3.Chip.Filter">
@@ -116,19 +138,11 @@
     <style name="Text.PageTitle" parent="Text">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginBottom">14dp</item>
         <item name="android:fontFamily">serif</item>
         <item name="android:textColor">@color/pine</item>
         <item name="android:textSize">24sp</item>
         <item name="android:textStyle">bold</item>
-    </style>
-
-    <style name="Text.PageSubtitle" parent="Text">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginTop">2dp</item>
-        <item name="android:layout_marginBottom">14dp</item>
-        <item name="android:textColor">@color/ink_soft</item>
-        <item name="android:textSize">13sp</item>
     </style>
 
     <style name="Text.SectionTitle" parent="Text">

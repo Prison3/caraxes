@@ -56,10 +56,18 @@
         android:orientation="horizontal">
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/loginBtn"
+            style="@style/Widget.Caraxes.Button.Ghost.Compact"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="登录" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/toggleBtn"
             style="@style/Widget.Caraxes.Button.Ghost.Compact"
             android:layout_width="wrap_content"
             android:layout_height="36dp"
+            android:layout_marginStart="8dp"
             android:text="禁用" />
 
         <com.google.android.material.button.MaterialButton

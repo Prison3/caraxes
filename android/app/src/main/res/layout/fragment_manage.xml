@@ -19,10 +19,6 @@
             android:text="管理" />
 
         <TextView
-            style="@style/Text.PageSubtitle"
-            android:text="添加、改名、删除店铺和供应商" />
-
-        <TextView
             style="@style/Text.SectionTitle"
             android:layout_width="wrap_content"
             android:layout_weight="0"

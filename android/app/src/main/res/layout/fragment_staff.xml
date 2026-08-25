@@ -12,10 +12,6 @@
         style="@style/Text.PageTitle"
         android:text="用户管理" />
 
-    <TextView
-        style="@style/Text.PageSubtitle"
-        android:text="管理店长账号：添加、改绑店铺、启用/禁用、删除" />
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

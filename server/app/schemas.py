@@ -56,6 +56,8 @@ class UserOut(BaseModel):
     shop_id: Optional[int] = None
     shop_name: Optional[str] = None
     disabled: bool = False
+    impersonating: bool = False
+    origin_username: Optional[str] = None
 
 
 class ManagerCreate(BaseModel):

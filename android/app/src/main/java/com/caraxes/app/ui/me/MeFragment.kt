@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -40,6 +41,7 @@ class MeFragment : Fragment() {
         refreshProfile()
         binding.currentVersionText.text = "当前版本  v${BuildConfig.VERSION_NAME}"
         binding.changePasswordBtn.setOnClickListener { showPasswordDialog() }
+        binding.returnAdminBtn.setOnClickListener { returnToAdmin() }
         binding.checkUpdateBtn.setOnClickListener { checkUpdate() }
         binding.installUpdateBtn.setOnClickListener {
             val info = releaseInfo ?: return@setOnClickListener
@@ -65,12 +67,21 @@ class MeFragment : Fragment() {
         binding.avatarLetter.text = name.first().toString()
         val role = if (Session.isAdmin(requireContext())) "管理员" else "店长"
         val shop = Session.shopName(requireContext())
-        binding.roleText.text = if (Session.isAdmin(requireContext())) {
+        val impersonating = Session.isImpersonating(requireContext())
+        val origin = Session.originUsername(requireContext())
+        binding.roleText.text = if (impersonating) {
+            "以 $role 身份登录"
+        } else if (Session.isAdmin(requireContext())) {
             "龙厨当家 · $role"
         } else {
             "龙厨当家 · $role${if (shop.isNotBlank()) " · $shop" else ""}"
         }
-        binding.accountHint.text = "当前账号：$name（$role）。可修改登录密码。"
+        binding.accountHint.text = if (impersonating) {
+            "当前账号：$name（$role），由管理员 $origin 切换。可返回管理员。"
+        } else {
+            "当前账号：$name（$role）。可修改登录密码。"
+        }
+        binding.returnAdminBtn.isVisible = impersonating
     }
 
     private fun checkUpdate(silent: Boolean = false) {
@@ -115,7 +126,7 @@ class MeFragment : Fragment() {
 
     private fun showPasswordDialog() {
         val content = DialogPasswordBinding.inflate(layoutInflater)
-        val dialog = AlertDialog.Builder(requireContext())
+        val dialog = MaterialAlertDialogBuilder(requireContext())
             .setTitle("修改登录密码")
             .setView(content.root)
             .setPositiveButton("保存", null)
@@ -163,9 +174,38 @@ class MeFragment : Fragment() {
         dialog.show()
     }
 
+    private fun returnToAdmin() {
+        val origin = Session.originUsername(requireContext()).ifBlank { "管理员" }
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("返回管理员")
+            .setMessage("返回账号 $origin ？")
+            .setPositiveButton("返回") { _, _ ->
+                viewLifecycleOwner.lifecycleScope.launch {
+                    try {
+                        val user = ApiClient.get(requireContext()).returnAdmin()
+                        Session.saveUser(requireContext(), user)
+                        (activity as? MainActivity)?.applyRoleTabs()
+                        (activity as? MainActivity)?.refreshUsername()
+                        findNavController().navigate(
+                            Session.homeDestination(requireContext()),
+                            null,
+                            NavOptions.Builder()
+                                .setPopUpTo(R.id.loginFragment, false)
+                                .setLaunchSingleTop(true)
+                                .build(),
+                        )
+                    } catch (e: Exception) {
+                        toast(fail(e))
+                    }
+                }
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
     private fun confirmLogout() {
         val name = Session.username(requireContext()).ifBlank { "当前账号" }
-        AlertDialog.Builder(requireContext())
+        MaterialAlertDialogBuilder(requireContext())
             .setTitle("退出登录")
             .setMessage("确定退出账号 $name ？")
             .setPositiveButton("退出") { _, _ ->

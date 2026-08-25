@@ -27,7 +27,7 @@ import com.caraxes.app.ui.showMsg
 import com.caraxes.app.ui.shopsToChoices
 import com.caraxes.app.ui.suppliersToChoices
 import com.caraxes.app.ui.todayIso
-import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
 
 class CreateFragment : Fragment() {
@@ -181,7 +181,7 @@ class CreateFragment : Fragment() {
 
     private suspend fun confirmDuplicate(): Boolean {
         return kotlinx.coroutines.suspendCancellableCoroutine { cont ->
-            AlertDialog.Builder(requireContext())
+            MaterialAlertDialogBuilder(requireContext())
                 .setTitle("是否提交")
                 .setMessage("订单信息可能重复，是否继续提交")
                 .setPositiveButton("是") { _, _ -> cont.resume(true) {} }

@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.progressindicator.LinearProgressIndicator
@@ -88,7 +89,7 @@ class AppUpdateHelper(private val activity: AppCompatActivity) {
         val sizeMb = (info.size_bytes / 1048576.0).roundToInt()
         message.text = "当前可更新到 v${info.version_name}（约 ${sizeMb} MB）。是否立即下载安装？"
 
-        val dlg = AlertDialog.Builder(activity)
+        val dlg = MaterialAlertDialogBuilder(activity)
             .setTitle("发现新版本")
             .setView(view)
             .setPositiveButton("更新", null)

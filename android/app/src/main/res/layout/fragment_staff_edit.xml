@@ -17,6 +17,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="48dp"
+            android:layout_marginBottom="10dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
@@ -43,11 +44,6 @@
                 android:textSize="22sp"
                 android:textStyle="bold" />
         </LinearLayout>
-
-        <TextView
-            android:id="@+id/pageSubtitle"
-            style="@style/Text.PageSubtitle"
-            android:text="设置用户名、密码和绑定店铺后保存" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -132,6 +128,15 @@
                 android:text="保存"
                 android:textSize="16sp" />
         </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/loginBtn"
+            style="@style/Widget.Caraxes.Button.Ghost"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="12dp"
+            android:text="登录此账号"
+            android:visibility="gone" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/deleteBtn"

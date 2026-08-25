@@ -99,11 +99,17 @@ interface ApiService {
         @Body body: ManagerUpdate,
     ): ManagerOut
 
+    @POST("api/users/{id}/login")
+    suspend fun loginAsManager(@Path("id") id: Int): UserOut
+
     @DELETE("api/users/{id}")
     suspend fun deleteManager(
         @Path("id") id: Int,
         @Header("X-Admin-Confirm") password: String,
     )
+
+    @POST("api/auth/return-admin")
+    suspend fun returnAdmin(): UserOut
 
     @GET("api/costs")
     suspend fun listCosts(
@@ -111,6 +117,8 @@ interface ApiService {
         @Query("period") period: String,
         @Query("order_date") orderDate: String? = null,
         @Query("month") month: String? = null,
+        @Query("shop_id") shopId: Int? = null,
+        @Query("supplier_id") supplierId: Int? = null,
     ): CostReportOut
 
     @GET("api/deletions")

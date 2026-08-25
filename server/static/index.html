@@ -4,8 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>龙厨当家</title>
+  <link rel="icon" type="image/png" href="/static/favicon.png" />
+  <link rel="apple-touch-icon" href="/static/apple-touch-icon.png" />
   <script src="/static/device.js?v=2"></script>
-  <link rel="stylesheet" href="/static/style.css?v=20260825f" />
+  <link rel="stylesheet" href="/static/style.css?v=20260825l" />
 </head>
 <body>
   <header class="topbar">
@@ -14,6 +16,7 @@
       <span id="currentUser" class="uname"></span>
       <span id="currentRole" class="urole" hidden></span>
       <button type="button" id="changePasswordBtn" class="logout-btn">修改密码</button>
+      <button type="button" id="returnAdminBtn" class="logout-btn" hidden>返回管理员</button>
       <button type="button" id="logoutBtn" class="logout-btn">退出</button>
     </div>
   </header>
@@ -29,7 +32,6 @@
 
     <section id="panelCreate" class="panel tab-panel active" role="tabpanel">
       <h2>录入订单</h2>
-      <p class="section-lead">按日期、店铺、供应商上报单日金额</p>
       <form id="orderForm" class="card">
         <div class="choice-field">
           <span class="choice-label">店铺名</span>
@@ -79,7 +81,6 @@
 
     <section id="panelQuery" class="panel tab-panel" role="tabpanel" hidden>
       <h2>查询订单</h2>
-      <p class="section-lead">按日期、店铺、供应商筛选</p>
       <form id="queryForm" class="query-form card">
         <div class="choice-field">
           <span class="choice-label">店铺名</span>
@@ -129,7 +130,6 @@
           <div id="querySupplierPicker" class="chip-grid" role="listbox" aria-label="筛选供应商"></div>
         </div>
         <div class="query-actions">
-          <button type="submit" id="queryBtn">查询</button>
           <button type="button" id="resetQueryBtn" class="btn-secondary">重置</button>
         </div>
       </form>
@@ -156,13 +156,12 @@
             <tbody id="orderList"></tbody>
           </table>
         </div>
-        <p id="emptyHint" class="empty">暂无订单，请调整条件后查询</p>
+        <p id="emptyHint" class="empty">暂无订单，请调整条件</p>
       </div>
     </section>
 
     <section id="panelManage" class="panel tab-panel" role="tabpanel" hidden>
       <h2>管理</h2>
-      <p class="section-lead">添加、改名、删除店铺和供应商</p>
       <h3>店铺</h3>
       <form id="shopForm" class="inline-form">
         <input type="text" id="newShopName" placeholder="店铺名称" maxlength="200" required />
@@ -228,7 +227,6 @@
 
     <section id="panelCost" class="panel tab-panel" role="tabpanel" hidden>
       <h2>成本</h2>
-      <p class="section-lead">按店铺或供应商查看；按日为当月每日柱状，按月为当年每月柱状</p>
       <form id="costForm" class="query-form card">
         <div class="choice-field">
           <span class="choice-label">查看</span>
@@ -237,6 +235,16 @@
             <button type="button" class="mode-btn" data-cost-group="supplier">按供应商</button>
           </div>
         </div>
+        <div id="costShopField" class="choice-field">
+          <span class="choice-label">店铺</span>
+          <input type="hidden" id="costShopId" value="" />
+          <div id="costShopPicker" class="chip-grid" role="listbox" aria-label="选择店铺"></div>
+        </div>
+        <div id="costSupplierField" class="choice-field" hidden>
+          <span class="choice-label">供应商</span>
+          <input type="hidden" id="costSupplierId" value="" />
+          <div id="costSupplierPicker" class="chip-grid" role="listbox" aria-label="选择供应商"></div>
+        </div>
         <div class="choice-field">
           <span class="choice-label">时间</span>
           <div id="costPeriodRow" class="mode-row" role="tablist" aria-label="按日或按月">
@@ -244,14 +252,6 @@
             <button type="button" class="mode-btn active" data-cost-period="month">按月</button>
           </div>
         </div>
-        <label id="costMonthLabel">
-          月份
-          <input type="month" id="costMonth" />
-        </label>
-        <label id="costDateLabel" hidden>
-          日期
-          <input type="date" id="costDate" />
-        </label>
         <div class="query-actions">
           <button type="submit" id="costBtn">查询</button>
         </div>
@@ -259,7 +259,9 @@
       <p id="costMsg" class="msg" hidden></p>
       <div class="orders-readable query-results">
         <div class="list-head cost-chart-head">
+          <button type="button" id="costChartPrev" class="cost-chart-nav" aria-label="上一段">‹</button>
           <h3 id="costChartTitle">日柱状</h3>
+          <button type="button" id="costChartNext" class="cost-chart-nav" aria-label="下一段">›</button>
           <span id="costChartMeta" class="meta"></span>
         </div>
         <div id="costChartCard" class="cost-chart-card" hidden>
@@ -288,7 +290,6 @@
 
     <section id="panelUsers" class="panel tab-panel" role="tabpanel" hidden>
       <h2>用户管理</h2>
-      <p class="section-lead">管理店长账号：添加、改绑店铺、启用/禁用、删除</p>
       <form id="managerForm" class="manager-form card">
         <input type="text" id="newManagerUsername" placeholder="用户名" maxlength="64" required autocomplete="off" />
         <input type="password" id="newManagerPassword" placeholder="密码（至少 4 位）" minlength="4" maxlength="128" required autocomplete="new-password" />
@@ -427,6 +428,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=20260825f"></script>
+  <script src="/static/app.js?v=20260825l"></script>
 </body>
 </html>

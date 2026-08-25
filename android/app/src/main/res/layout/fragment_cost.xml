@@ -13,10 +13,6 @@
         style="@style/Text.PageTitle"
         android:text="成本" />
 
-    <TextView
-        style="@style/Text.PageSubtitle"
-        android:text="按店铺或供应商查看；按日为当月每日柱状，按月为当年每月柱状" />
-
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -65,6 +61,18 @@
                 </com.google.android.material.button.MaterialButtonToggleGroup>
 
                 <TextView
+                    android:id="@+id/filterLabel"
+                    style="@style/Form.Label"
+                    android:layout_marginTop="12dp"
+                    android:text="店铺" />
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/filterChips"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:singleSelection="true" />
+
+                <TextView
                     style="@style/Form.Label"
                     android:layout_marginTop="12dp"
                     android:text="时间" />
@@ -94,23 +102,6 @@
                         android:text="按月" />
                 </com.google.android.material.button.MaterialButtonToggleGroup>
 
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/periodValueLayout"
-                    style="@style/Widget.Caraxes.TextInput"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:hint="月份">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/periodValue"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:focusable="false"
-                        android:inputType="none"
-                        android:textColor="@color/ink"
-                        android:textSize="15sp" />
-                </com.google.android.material.textfield.TextInputLayout>
-
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/queryBtn"
                     android:layout_width="match_parent"
@@ -126,13 +117,36 @@
                     android:textSize="13sp" />
             </LinearLayout>
 
-            <TextView
-                android:id="@+id/chartTitle"
-                style="@style/Text.SectionTitle"
+            <LinearLayout
+                android:id="@+id/chartHead"
                 android:layout_width="match_parent"
-                android:layout_weight="0"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="日柱状" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/chartPrev"
+                    style="@style/Widget.Caraxes.Button.Ghost.Compact"
+                    android:layout_width="40dp"
+                    android:layout_height="36dp"
+                    android:text="‹"
+                    android:textSize="18sp" />
+
+                <TextView
+                    android:id="@+id/chartTitle"
+                    style="@style/Text.SectionTitle"
+                    android:gravity="center"
+                    android:text="日柱状" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/chartNext"
+                    style="@style/Widget.Caraxes.Button.Ghost.Compact"
+                    android:layout_width="40dp"
+                    android:layout_height="36dp"
+                    android:text="›"
+                    android:textSize="18sp" />
+            </LinearLayout>
 
             <com.caraxes.app.ui.cost.CostBarChartView
                 android:id="@+id/chart"

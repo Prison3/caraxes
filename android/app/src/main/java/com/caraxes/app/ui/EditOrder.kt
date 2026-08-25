@@ -2,6 +2,7 @@ package com.caraxes.app.ui
 
 import android.view.LayoutInflater
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.fragment.app.Fragment
 import com.caraxes.app.R
 import com.caraxes.app.data.ApiClient
@@ -38,7 +39,7 @@ fun Fragment.showEditOrderDialog(order: OrderOut, onSaved: () -> Unit) {
         }
     }
 
-    val dialog = AlertDialog.Builder(requireContext())
+    val dialog = MaterialAlertDialogBuilder(requireContext())
         .setTitle("修改订单")
         .setView(content.root)
         .setPositiveButton("保存", null)

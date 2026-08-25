@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -16,6 +17,7 @@ import com.caraxes.app.data.ManagerUpdate
 import com.caraxes.app.databinding.FragmentStaffEditBinding
 import com.caraxes.app.ui.bindChoices
 import com.caraxes.app.ui.clearMsg
+import com.caraxes.app.ui.enterAccount
 import com.caraxes.app.ui.fail
 import com.caraxes.app.ui.promptPassword
 import com.caraxes.app.ui.selectedChoiceId
@@ -42,13 +44,9 @@ class StaffEditFragment : Fragment() {
         val isEdit = staffId > 0
 
         binding.pageTitle.text = if (isEdit) "编辑店长" else "添加店长"
-        binding.pageSubtitle.text = if (isEdit) {
-            "修改用户名、密码或绑定店铺后保存"
-        } else {
-            "设置用户名、密码和绑定店铺后保存"
-        }
         binding.passwordLayout.hint = if (isEdit) "密码（不改可留空）" else "密码"
         binding.deleteBtn.isVisible = isEdit
+        binding.loginBtn.isVisible = isEdit
         if (isEdit) {
             binding.inputUsername.setText(originalUsername)
         }
@@ -56,6 +54,7 @@ class StaffEditFragment : Fragment() {
         binding.backBtn.setOnClickListener { findNavController().navigateUp() }
         binding.cancelBtn.setOnClickListener { findNavController().navigateUp() }
         binding.saveBtn.setOnClickListener { save() }
+        binding.loginBtn.setOnClickListener { confirmSwitch() }
         binding.deleteBtn.setOnClickListener { confirmDelete() }
         loadShops()
     }
@@ -81,6 +80,28 @@ class StaffEditFragment : Fragment() {
             shopsToChoices(Catalog.shops, allowEmpty = false),
             selectedShopId,
         ) { selectedShopId = it }
+    }
+
+    private fun confirmSwitch() {
+        val name = binding.inputUsername.text?.toString()?.trim().orEmpty().ifBlank { originalUsername }
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("切换登录")
+            .setMessage("以「$name」（店长）登录？之后可在「我的」返回管理员。")
+            .setNegativeButton("取消", null)
+            .setPositiveButton("切换") { _, _ -> switchTo() }
+            .show()
+    }
+
+    private fun switchTo() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val user = ApiClient.get(requireContext()).loginAsManager(staffId)
+                showMsg(binding.editMsg, "已切换到 ${user.username}", true)
+                enterAccount(user)
+            } catch (e: Exception) {
+                showMsg(binding.editMsg, fail(e), false)
+            }
+        }
     }
 
     private fun save() {

@@ -24,7 +24,6 @@
   const queryShopPicker = document.getElementById("queryShopPicker");
   const querySupplierId = document.getElementById("querySupplierId");
   const querySupplierPicker = document.getElementById("querySupplierPicker");
-  const queryBtn = document.getElementById("queryBtn");
   const resetQueryBtn = document.getElementById("resetQueryBtn");
   const queryMsg = document.getElementById("queryMsg");
 
@@ -32,6 +31,8 @@
   let calMode = "day";
   let calCursor = new Date();
   let rangeAnchor = null;
+  let querySeq = 0;
+  let queryDateTimer = null;
 
   const orderList = document.getElementById("orderList");
   const resultTableWrap = document.getElementById("resultTableWrap");
@@ -77,10 +78,12 @@
   const costForm = document.getElementById("costForm");
   const costGroupRow = document.getElementById("costGroupRow");
   const costPeriodRow = document.getElementById("costPeriodRow");
-  const costMonthLabel = document.getElementById("costMonthLabel");
-  const costDateLabel = document.getElementById("costDateLabel");
-  const costMonth = document.getElementById("costMonth");
-  const costDate = document.getElementById("costDate");
+  const costShopField = document.getElementById("costShopField");
+  const costSupplierField = document.getElementById("costSupplierField");
+  const costShopId = document.getElementById("costShopId");
+  const costSupplierId = document.getElementById("costSupplierId");
+  const costShopPicker = document.getElementById("costShopPicker");
+  const costSupplierPicker = document.getElementById("costSupplierPicker");
   const costBtn = document.getElementById("costBtn");
   const costMsg = document.getElementById("costMsg");
   const costListMeta = document.getElementById("costListMeta");
@@ -93,8 +96,12 @@
   const costChartMeta = document.getElementById("costChartMeta");
   const costChartCard = document.getElementById("costChartCard");
   const costChart = document.getElementById("costChart");
+  const costChartPrev = document.getElementById("costChartPrev");
+  const costChartNext = document.getElementById("costChartNext");
   let costGroupBy = "shop";
   let costPeriod = "month";
+  let costSelectedDay = "";
+  let costSelectedMonth = "";
   let lastCostReport = null;
 
   const deletionList = document.getElementById("deletionList");
@@ -116,6 +123,7 @@
   const currentUser = document.getElementById("currentUser");
   const currentRole = document.getElementById("currentRole");
   const changePasswordBtn = document.getElementById("changePasswordBtn");
+  const returnAdminBtn = document.getElementById("returnAdminBtn");
   const logoutBtn = document.getElementById("logoutBtn");
 
   const passwordModal = document.getElementById("passwordModal");
@@ -150,6 +158,10 @@
     return Boolean(currentUserInfo && currentUserInfo.role === "manager");
   }
 
+  function isImpersonating() {
+    return Boolean(currentUserInfo && currentUserInfo.impersonating);
+  }
+
   function managerShopName() {
     return (currentUserInfo && currentUserInfo.shop_name) || "";
   }
@@ -172,7 +184,12 @@
       mainTabs.classList.toggle("tabs-2", !admin);
     }
     if (currentRole) {
-      if (isManager()) {
+      if (isImpersonating()) {
+        currentRole.hidden = false;
+        currentRole.textContent = isManager()
+          ? `以店长登录 · ${managerShopName()}`
+          : "以管理员登录";
+      } else if (isManager()) {
         currentRole.hidden = false;
         currentRole.textContent = `店长 · ${managerShopName()}`;
       } else {
@@ -180,6 +197,7 @@
         currentRole.textContent = "管理员";
       }
     }
+    if (returnAdminBtn) returnAdminBtn.hidden = !isImpersonating();
     document.body.classList.toggle("role-manager", isManager());
     document.body.classList.toggle("role-admin", isAdmin());
     if (admin && panelCreate && !panelCreate.hidden) {
@@ -282,6 +300,7 @@
           <div class="shop"></div>
         </div>
         <div class="manager-actions">
+          ${item.disabled ? "" : '<button type="button" class="login-btn">登录</button>'}
           <button type="button" class="edit-btn">编辑</button>
           <button type="button" class="toggle-btn"></button>
           <button type="button" class="delete-btn">删除</button>
@@ -300,6 +319,8 @@
       toggleBtn.classList.toggle("is-enable", Boolean(item.disabled));
       toggleBtn.textContent = item.disabled ? "启用" : "禁用";
       row.querySelector(".edit-btn").addEventListener("click", () => openEditManagerModal(item));
+      const loginBtn = row.querySelector(".login-btn");
+      if (loginBtn) loginBtn.addEventListener("click", () => loginAsManager(item));
       toggleBtn.addEventListener("click", () => toggleManagerDisabled(item));
       row.querySelector(".delete-btn").addEventListener("click", () => deleteManager(item));
       managerList.appendChild(row);
@@ -329,6 +350,40 @@
     }
     showMsg(msgEl, `店长已${action}`, true);
     await loadManagers();
+  }
+
+  async function loginAsManager(item) {
+    const ok = await openModal({
+      title: "切换登录",
+      text: `以「${item.username}」（店长）登录？之后可在顶部「返回管理员」。`,
+      yesText: "切换",
+      noText: "取消",
+    });
+    if (!ok) return;
+    const msgEl = managerFeedbackEl();
+    const res = await api(`/api/users/${item.id}/login`, { method: "POST" });
+    if (!res.ok) {
+      showMsg(msgEl, await parseError(res), false);
+      return;
+    }
+    location.replace("/");
+  }
+
+  async function returnToAdmin() {
+    const origin = (currentUserInfo && currentUserInfo.origin_username) || "管理员";
+    const ok = await openModal({
+      title: "返回管理员",
+      text: `返回账号 ${origin} ？`,
+      yesText: "返回",
+      noText: "取消",
+    });
+    if (!ok) return;
+    const res = await api("/api/auth/return-admin", { method: "POST" });
+    if (!res.ok) {
+      showMsg(formMsg, await parseError(res), false);
+      return;
+    }
+    location.replace("/");
   }
 
   async function createManager() {
@@ -758,6 +813,7 @@
       btn.addEventListener("click", () => {
         hiddenInput.value = value;
         renderChipPicker(container, hiddenInput, items, options);
+        if (typeof options.onChange === "function") options.onChange(value);
       });
       container.appendChild(btn);
     };
@@ -876,6 +932,23 @@
     });
   }
 
+  function renderQueryPickers() {
+    renderChipPicker(queryShopPicker, queryShopId, shops, {
+      allowEmpty: !isManager(),
+      emptyLabel: "全部店铺",
+      keepValue: true,
+      valueKey: "id",
+      onChange: () => queryOrders(),
+    });
+    renderChipPicker(querySupplierPicker, querySupplierId, suppliers, {
+      allowEmpty: true,
+      emptyLabel: "全部供应商",
+      keepValue: true,
+      valueKey: "id",
+      onChange: () => queryOrders(),
+    });
+  }
+
   async function loadCatalog() {
     const [shopRes, supplierRes] = await Promise.all([
       api("/api/shops"),
@@ -903,18 +976,8 @@
       keepValue: true,
       valueKey: "id",
     });
-    renderChipPicker(queryShopPicker, queryShopId, shops, {
-      allowEmpty: !isManager(),
-      emptyLabel: "全部店铺",
-      keepValue: true,
-      valueKey: "id",
-    });
-    renderChipPicker(querySupplierPicker, querySupplierId, suppliers, {
-      allowEmpty: true,
-      emptyLabel: "全部供应商",
-      keepValue: true,
-      valueKey: "id",
-    });
+    renderQueryPickers();
+    renderCostPickers();
     if (newManagerShopPicker && newManagerShopId) {
       renderChipPicker(newManagerShopPicker, newManagerShopId, shops, {
         allowEmpty: false,
@@ -1051,9 +1114,9 @@
   }
 
   function applyCostPeriodUi() {
-    const monthly = costPeriod === "month";
-    if (costMonthLabel) costMonthLabel.hidden = !monthly;
-    if (costDateLabel) costDateLabel.hidden = monthly;
+    const byShop = costGroupBy === "shop";
+    if (costShopField) costShopField.hidden = !byShop;
+    if (costSupplierField) costSupplierField.hidden = byShop;
     if (costPeriodRow) {
       costPeriodRow.querySelectorAll(".mode-btn").forEach((btn) => {
         btn.classList.toggle("active", btn.dataset.costPeriod === costPeriod);
@@ -1066,6 +1129,43 @@
     }
   }
 
+  function renderCostPickers() {
+    if (costShopPicker && costShopId) {
+      renderChipPicker(costShopPicker, costShopId, shops, {
+        allowEmpty: true,
+        emptyLabel: "全部店铺",
+        keepValue: true,
+        valueKey: "id",
+        onChange: () => loadCosts(),
+      });
+    }
+    if (costSupplierPicker && costSupplierId) {
+      renderChipPicker(costSupplierPicker, costSupplierId, suppliers, {
+        allowEmpty: true,
+        emptyLabel: "全部供应商",
+        keepValue: true,
+        valueKey: "id",
+        onChange: () => loadCosts(),
+      });
+    }
+  }
+
+  function shiftCostPeriod(delta) {
+    if (costPeriod === "month") {
+      const parts = (costSelectedMonth || currentMonthISO()).split("-");
+      const year = Number(parts[0] || 0) + delta;
+      const month = Number(parts[1] || 1);
+      costSelectedMonth = `${year}-${pad2(month)}`;
+    } else {
+      const parts = (costSelectedDay || todayISO()).split("-").map(Number);
+      const d = new Date(parts[0], (parts[1] || 1) - 1, parts[2] || 1);
+      d.setMonth(d.getMonth() + delta);
+      costSelectedDay = `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+      costSelectedMonth = costSelectedDay.slice(0, 7);
+    }
+    loadCosts();
+  }
+
   async function loadCosts() {
     if (!isAdmin() || !costList) return;
     hideMsg(costMsg);
@@ -1073,10 +1173,12 @@
     params.set("group_by", costGroupBy);
     params.set("period", costPeriod);
     if (costPeriod === "month") {
-      params.set("month", (costMonth?.value || currentMonthISO()));
+      params.set("month", costSelectedMonth || currentMonthISO());
     } else {
-      params.set("order_date", (costDate?.value || todayISO()));
+      params.set("order_date", costSelectedDay || todayISO());
     }
+    if (costGroupBy === "shop" && costShopId?.value) params.set("shop_id", costShopId.value);
+    if (costGroupBy === "supplier" && costSupplierId?.value) params.set("supplier_id", costSupplierId.value);
     if (costBtn) costBtn.disabled = true;
     if (costListMeta) costListMeta.textContent = "加载中…";
     try {
@@ -1128,7 +1230,12 @@
 
   function renderCostChart(report) {
     const buckets = report.buckets || [];
-    const selected = report.selected || (costPeriod === "month" ? costMonth?.value : costDate?.value) || "";
+    const selected = report.selected || (costPeriod === "month" ? costSelectedMonth : costSelectedDay) || "";
+    if (costPeriod === "month" && selected.length >= 7) costSelectedMonth = selected.slice(0, 7);
+    if (costPeriod === "day" && selected.length >= 10) {
+      costSelectedDay = selected.slice(0, 10);
+      costSelectedMonth = selected.slice(0, 7);
+    }
     if (costPeriod === "month") {
       const year = String(selected || "").slice(0, 4);
       if (costChartTitle) costChartTitle.textContent = year ? `月柱状 · ${year}年` : "月柱状";
@@ -1194,9 +1301,10 @@
       const selectBar = () => {
         if (!bucket.key || bucket.key === selected) return;
         if (costPeriod === "month") {
-          if (costMonth) costMonth.value = bucket.key;
-        } else if (costDate) {
-          costDate.value = bucket.key;
+          costSelectedMonth = bucket.key;
+        } else {
+          costSelectedDay = bucket.key;
+          costSelectedMonth = bucket.key.slice(0, 7);
         }
         loadCosts();
       };
@@ -1562,18 +1670,18 @@
     if (querySupplierId.value) params.set("supplier_id", querySupplierId.value);
 
     listMeta.textContent = "加载中…";
-    queryBtn.disabled = true;
+    const seq = ++querySeq;
     try {
       const qs = params.toString();
       const res = await api(`/api/orders${qs ? `?${qs}` : ""}`);
+      if (seq !== querySeq) return;
       if (!res.ok) throw new Error(await parseError(res));
       renderOrders(await res.json());
     } catch (err) {
+      if (seq !== querySeq) return;
       listMeta.textContent = "";
       renderOrders([]);
       showMsg(queryMsg, err.message || "查询失败", false);
-    } finally {
-      queryBtn.disabled = false;
     }
   }
 
@@ -1753,8 +1861,8 @@
       });
     });
   }
-  if (costMonth) costMonth.addEventListener("change", () => loadCosts());
-  if (costDate) costDate.addEventListener("change", () => loadCosts());
+  if (costChartPrev) costChartPrev.addEventListener("click", () => shiftCostPeriod(-1));
+  if (costChartNext) costChartNext.addEventListener("click", () => shiftCostPeriod(1));
 
   supplierForm.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -1784,6 +1892,17 @@
 
   queryForm.addEventListener("submit", (e) => {
     e.preventDefault();
+    queryOrders();
+  });
+
+  queryDate.addEventListener("input", () => {
+    clearTimeout(queryDateTimer);
+    const parsed = parseQueryDateInput(queryDate.value);
+    if (!parsed.ok) return;
+    queryDateTimer = setTimeout(() => queryOrders(), 280);
+  });
+  queryDate.addEventListener("change", () => {
+    clearTimeout(queryDateTimer);
     queryOrders();
   });
 
@@ -1868,18 +1987,7 @@
     queryDate.value = todayISO();
     queryShopId.value = isManager() ? managerShopId() : "";
     querySupplierId.value = "";
-    renderChipPicker(queryShopPicker, queryShopId, shops, {
-      allowEmpty: !isManager(),
-      emptyLabel: "全部店铺",
-      keepValue: false,
-      valueKey: "id",
-    });
-    renderChipPicker(querySupplierPicker, querySupplierId, suppliers, {
-      allowEmpty: true,
-      emptyLabel: "全部供应商",
-      keepValue: false,
-      valueKey: "id",
-    });
+    renderQueryPickers();
     lockShopPickers();
     rangeAnchor = null;
     setCalOpen(false);
@@ -1966,6 +2074,12 @@
     }
   });
 
+  if (returnAdminBtn) {
+    returnAdminBtn.addEventListener("click", () => {
+      returnToAdmin().catch((err) => showMsg(formMsg, err.message || "返回失败", false));
+    });
+  }
+
   logoutBtn.addEventListener("click", async () => {
     await api("/api/auth/logout", { method: "POST" });
     location.href = "/login";
@@ -1973,8 +2087,8 @@
 
   orderDate.value = todayISO();
   queryDate.value = todayISO();
-  if (costDate) costDate.value = todayISO();
-  if (costMonth) costMonth.value = currentMonthISO();
+  costSelectedDay = todayISO();
+  costSelectedMonth = currentMonthISO();
   applyCostPeriodUi();
   window.addEventListener("resize", () => {
     if (lastCostReport && panelCost && !panelCost.hidden) renderCostChart(lastCostReport);

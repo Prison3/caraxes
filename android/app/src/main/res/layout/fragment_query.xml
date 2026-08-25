@@ -13,10 +13,6 @@
         style="@style/Text.PageTitle"
         android:text="查询订单" />
 
-    <TextView
-        style="@style/Text.PageSubtitle"
-        android:text="按日期、店铺、供应商筛选" />
-
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -129,28 +125,20 @@
                     android:layout_height="wrap_content"
                     app:singleSelection="true" />
 
-                <LinearLayout
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/queryBtn"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:visibility="gone"
+                    android:text="查询" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/resetBtn"
+                    style="@style/Widget.Caraxes.Button.Ghost"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="48dp"
                     android:layout_marginTop="14dp"
-                    android:orientation="horizontal">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/queryBtn"
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_marginEnd="8dp"
-                        android:layout_weight="1"
-                        android:text="查询" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/resetBtn"
-                        style="@style/Widget.Caraxes.Button.Ghost"
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_weight="1"
-                        android:text="重置" />
-                </LinearLayout>
+                    android:text="重置" />
 
                 <TextView
                     android:id="@+id/queryMsg"
@@ -199,7 +187,7 @@
             <TextView
                 android:id="@+id/emptyHint"
                 style="@style/Text.Empty"
-                android:text="暂无订单，请调整条件后查询" />
+                android:text="暂无订单，请调整条件" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 </LinearLayout>

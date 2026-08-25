@@ -29,16 +29,23 @@ def _year_bounds(year: int) -> Tuple[date, date]:
     return date(year, 1, 1), date(year, 12, 31)
 
 
-def _sum_by_key(db: Database, start: date, end: date, group_expr) -> Dict[str, Tuple[float, int]]:
+def _sum_by_key(
+    db: Database,
+    start: date,
+    end: date,
+    group_expr,
+    extra_match: Optional[dict] = None,
+) -> Dict[str, Tuple[float, int]]:
+    match = {
+        "order_date": {
+            "$gte": serialize_order_date(start),
+            "$lte": serialize_order_date(end),
+        }
+    }
+    if extra_match:
+        match.update(extra_match)
     pipeline = [
-        {
-            "$match": {
-                "order_date": {
-                    "$gte": serialize_order_date(start),
-                    "$lte": serialize_order_date(end),
-                }
-            }
-        },
+        {"$match": match},
         {
             "$group": {
                 "_id": group_expr,
@@ -59,8 +66,13 @@ def _sum_by_key(db: Database, start: date, end: date, group_expr) -> Dict[str, T
     return out
 
 
-def _day_buckets(db: Database, month_start: date, month_end: date) -> List[CostBucket]:
-    totals = _sum_by_key(db, month_start, month_end, "$order_date")
+def _day_buckets(
+    db: Database,
+    month_start: date,
+    month_end: date,
+    extra_match: Optional[dict] = None,
+) -> List[CostBucket]:
+    totals = _sum_by_key(db, month_start, month_end, "$order_date", extra_match)
     buckets: List[CostBucket] = []
     day = month_start
     while day <= month_end:
@@ -78,9 +90,13 @@ def _day_buckets(db: Database, month_start: date, month_end: date) -> List[CostB
     return buckets
 
 
-def _month_buckets(db: Database, year: int) -> List[CostBucket]:
+def _month_buckets(
+    db: Database,
+    year: int,
+    extra_match: Optional[dict] = None,
+) -> List[CostBucket]:
     start, end = _year_bounds(year)
-    totals = _sum_by_key(db, start, end, {"$substrCP": ["$order_date", 0, 7]})
+    totals = _sum_by_key(db, start, end, {"$substrCP": ["$order_date", 0, 7]}, extra_match)
     buckets: List[CostBucket] = []
     for mon in range(1, 13):
         key = f"{year:04d}-{mon:02d}"
@@ -102,14 +118,22 @@ def list_costs(
     period: Literal["day", "month"] = Query("month", description="按日或按月查看"),
     order_date: Optional[date] = Query(None, description="按日查看时的日期"),
     month: Optional[str] = Query(None, description="按月查看时的月份，格式 YYYY-MM"),
+    shop_id: Optional[int] = Query(None, gt=0, description="按店铺筛选"),
+    supplier_id: Optional[int] = Query(None, gt=0, description="按供应商筛选"),
     db: Database = Depends(get_db),
     _: User = Depends(require_admin),
 ):
+    extra_match: dict = {}
+    if shop_id is not None:
+        extra_match["shop_id"] = shop_id
+    if supplier_id is not None:
+        extra_match["supplier_id"] = supplier_id
+
     if period == "day":
         day = order_date or date.today()
         start, end = day, day
         month_start, month_end = _month_bounds(f"{day.year:04d}-{day.month:02d}")
-        buckets = _day_buckets(db, month_start, month_end)
+        buckets = _day_buckets(db, month_start, month_end, extra_match)
         selected = day.isoformat()
     else:
         value = (month or "").strip() or f"{date.today().year:04d}-{date.today().month:02d}"
@@ -120,7 +144,7 @@ def list_costs(
             )
         start, end = _month_bounds(value)
         year = int(value[:4])
-        buckets = _month_buckets(db, year)
+        buckets = _month_buckets(db, year, extra_match)
         selected = value
 
     group_field = "shop_id" if group_by == "shop" else "supplier_id"
@@ -129,17 +153,21 @@ def list_costs(
         if group_by == "shop"
         else db.suppliers.find({}).sort("name", 1)
     )
+    if group_by == "shop" and shop_id is not None:
+        catalog = [doc for doc in catalog if int(doc["_id"]) == shop_id]
+    if group_by == "supplier" and supplier_id is not None:
+        catalog = [doc for doc in catalog if int(doc["_id"]) == supplier_id]
     names = {int(doc["_id"]): str(doc.get("name") or "") for doc in catalog}
 
+    match = {
+        "order_date": {
+            "$gte": serialize_order_date(start),
+            "$lte": serialize_order_date(end),
+        }
+    }
+    match.update(extra_match)
     pipeline = [
-        {
-            "$match": {
-                "order_date": {
-                    "$gte": serialize_order_date(start),
-                    "$lte": serialize_order_date(end),
-                }
-            }
-        },
+        {"$match": match},
         {
             "$group": {
                 "_id": f"${group_field}",

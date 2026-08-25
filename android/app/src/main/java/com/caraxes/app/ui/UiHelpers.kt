@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.widget.NumberPicker
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.NavOptions
@@ -144,7 +145,7 @@ fun Fragment.pickMonth(current: String, onPicked: (String) -> Unit) {
     }
     box.addView(yearPicker)
     box.addView(monthPicker)
-    AlertDialog.Builder(requireContext())
+    MaterialAlertDialogBuilder(requireContext())
         .setTitle("选择月份")
         .setView(box)
         .setPositiveButton("确定") { _, _ ->
@@ -168,7 +169,7 @@ fun Fragment.clearMsg(view: TextView) {
 fun Fragment.promptPassword(title: String, message: String, onConfirm: (String) -> Unit) {
     val content = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_confirm, null, false)
     val input = content.findViewById<TextInputEditText>(R.id.confirmPassword)
-    val dialog = AlertDialog.Builder(requireContext())
+    val dialog = MaterialAlertDialogBuilder(requireContext())
         .setTitle(title)
         .setMessage(message)
         .setView(content)
@@ -193,7 +194,7 @@ fun Fragment.promptRename(title: String, current: String, onConfirm: (String) ->
     val content = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_rename, null, false)
     val input = content.findViewById<TextInputEditText>(R.id.renameValue)
     input.setText(current)
-    val dialog = AlertDialog.Builder(requireContext())
+    val dialog = MaterialAlertDialogBuilder(requireContext())
         .setTitle(title)
         .setView(content)
         .setPositiveButton("保存", null)

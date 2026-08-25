@@ -26,6 +26,8 @@ object Session {
     private const val KEY_ROLE = "role"
     private const val KEY_SHOP_ID = "shop_id"
     private const val KEY_SHOP_NAME = "shop_name"
+    private const val KEY_IMPERSONATING = "impersonating"
+    private const val KEY_ORIGIN_USERNAME = "origin_username"
     const val ROLE_ADMIN = "admin"
     const val ROLE_MANAGER = "manager"
 
@@ -37,6 +39,8 @@ object Session {
             .putString(KEY_ROLE, user.role)
             .putInt(KEY_SHOP_ID, user.shop_id ?: 0)
             .putString(KEY_SHOP_NAME, user.shop_name ?: "")
+            .putBoolean(KEY_IMPERSONATING, user.impersonating)
+            .putString(KEY_ORIGIN_USERNAME, user.origin_username ?: "")
             .apply()
     }
 
@@ -59,6 +63,12 @@ object Session {
 
     fun shopName(context: Context): String =
         context.getSharedPreferences(PREF, Context.MODE_PRIVATE).getString(KEY_SHOP_NAME, "") ?: ""
+
+    fun isImpersonating(context: Context): Boolean =
+        context.getSharedPreferences(PREF, Context.MODE_PRIVATE).getBoolean(KEY_IMPERSONATING, false)
+
+    fun originUsername(context: Context): String =
+        context.getSharedPreferences(PREF, Context.MODE_PRIVATE).getString(KEY_ORIGIN_USERNAME, "") ?: ""
 
     fun homeDestination(context: Context): Int =
         if (isAdmin(context)) R.id.manageFragment else R.id.createFragment

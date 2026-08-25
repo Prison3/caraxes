@@ -15,6 +15,16 @@
         android:paddingTop="64dp"
         android:paddingBottom="24dp">
 
+        <ImageView
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/bg_app_icon"
+            android:clipToOutline="true"
+            android:contentDescription="@string/app_name"
+            android:scaleType="centerCrop"
+            android:src="@mipmap/ic_launcher" />
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
