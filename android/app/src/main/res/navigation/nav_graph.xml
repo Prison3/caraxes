@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/loginFragment">
+
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.caraxes.app.ui.login.LoginFragment"
+        android:label="登录" />
+    <fragment
+        android:id="@+id/createFragment"
+        android:name="com.caraxes.app.ui.create.CreateFragment"
+        android:label="录入" />
+    <fragment
+        android:id="@+id/queryFragment"
+        android:name="com.caraxes.app.ui.query.QueryFragment"
+        android:label="查询" />
+    <fragment
+        android:id="@+id/manageFragment"
+        android:name="com.caraxes.app.ui.manage.ManageFragment"
+        android:label="管理" />
+    <fragment
+        android:id="@+id/meFragment"
+        android:name="com.caraxes.app.ui.me.MeFragment"
+        android:label="我的" />
+</navigation>

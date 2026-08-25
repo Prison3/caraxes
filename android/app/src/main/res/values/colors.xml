@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="paper">#EBE6DC</color>
+    <color name="paper2">#F7F4EF</color>
+    <color name="ink">#1A1A1A</color>
+    <color name="ink_soft">#8C1A1A1A</color>
+    <color name="line">#1A1A1A1A</color>
+    <color name="pine">#1B4D3E</color>
+    <color name="pine2">#163D32</color>
+    <color name="cinnabar">#B42318</color>
+    <color name="pine_soft">#1A1B4D3E</color>
+    <color name="cinnabar_soft">#1AB42318</color>
+    <color name="gold">#9A6B24</color>
+    <color name="ic_launcher_background">#1B4D3E</color>
+</resources>

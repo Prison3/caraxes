@@ -100,3 +100,12 @@ class SupplierOut(BaseModel):
     name: str
     created_at: datetime
     month_total: float = 0.0
+
+
+class AppReleaseOut(BaseModel):
+    version_name: str
+    version_code: int
+    filename: str
+    size_bytes: int
+    updated_at: str
+    download_url: str

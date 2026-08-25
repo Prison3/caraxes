@@ -14,9 +14,14 @@ server/data/
 .vscode/
 .DS_Store
 
-# Android (预留)
+# Android
 *.apk
 *.aab
+*.iml
 local.properties
 .gradle/
 **/build/
+.cxx/
+captures/
+server/downloads/*.apk
+server/downloads/app_version.json

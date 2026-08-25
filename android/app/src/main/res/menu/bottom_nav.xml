@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/createFragment"
+        android:icon="@drawable/ic_nav_create"
+        android:title="@string/nav_create" />
+    <item
+        android:id="@+id/queryFragment"
+        android:icon="@drawable/ic_nav_query"
+        android:title="@string/nav_query" />
+    <item
+        android:id="@+id/manageFragment"
+        android:icon="@drawable/ic_nav_manage"
+        android:title="@string/nav_manage" />
+    <item
+        android:id="@+id/meFragment"
+        android:icon="@drawable/ic_nav_me"
+        android:title="@string/nav_me" />
+</menu>

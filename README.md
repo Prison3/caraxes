@@ -1,6 +1,29 @@
 # 供应商每日订单系统
 
-Android App 向服务端上报每日供应商订单（日期、店铺名、供应商名、单日总价）。
+Web / Android 客户端向服务端上报每日供应商订单（日期、店铺、供应商、单日总价）。
+
+## Android
+
+用 Android Studio 打开 `android/` 目录同步 Gradle 后运行。
+
+- 默认 API：`http://10.0.2.2:8000/`（模拟器访问本机后端）
+- 真机：登录页「服务器设置」填写电脑局域网 IP，例如 `192.168.1.8:8000`
+- 默认账号：`admin` / `admin123`；店长用户名=店铺名、密码 `12345`
+
+功能与 Web 对齐：店长可录入/查询，管理员可查询/管理；「我的」双方都有。认证使用 Session Cookie（`caraxes_session`）。
+
+发布 APK：
+
+```bash
+./scripts/build_release_apk.sh
+```
+
+默认编译 release 并上传到 `root@S1:/root/caraxes/server/downloads/`。仅本地构建可设 `CARAXES_UPLOAD=0`。
+
+- 安装包：`http://127.0.0.1:8000/download/caraxes.apk`
+- 版本信息：`http://127.0.0.1:8000/api/app/info`
+
+App 启动和「我的」页会检查更新；新版本可直接下载安装。
 
 ## 服务端
 

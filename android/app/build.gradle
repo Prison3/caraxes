@@ -1,0 +1,80 @@
+apply plugin: 'com.android.application'
+apply plugin: 'org.jetbrains.kotlin.android'
+
+def gitRepoRoot = rootProject.projectDir.parentFile
+def gitExecutable = ['/usr/bin/git', '/opt/homebrew/bin/git', '/usr/local/bin/git']
+        .find { new File(it).canExecute() } ?: 'git'
+
+def gitOutput = { List<String> args ->
+    def pb = new ProcessBuilder([gitExecutable, '-C', gitRepoRoot.absolutePath] + args)
+    pb.redirectErrorStream(true)
+    def proc = pb.start()
+    def text = proc.inputStream.getText('UTF-8').trim()
+    proc.waitFor()
+    return text
+}
+
+def gitVersionCode = {
+    def n = gitOutput(['rev-list', '--count', 'HEAD'])
+    return n.isInteger() ? n.toInteger() : 1
+}()
+
+def gitVersionName = {
+    def desc = gitOutput(['describe', '--tags', '--always'])
+    if (desc.isEmpty()) desc = "dev"
+    return "${gitVersionCode} - ${desc}".toString()
+}()
+
+logger.lifecycle("App version: ${gitVersionCode} (${gitVersionName})")
+
+android {
+    namespace 'com.caraxes.app'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.caraxes.app"
+        minSdk 24
+        targetSdk 34
+        versionCode gitVersionCode
+        versionName gitVersionName
+        // 模拟器访问本机后端；真机请在登录页「服务器设置」改为电脑局域网 IP
+        buildConfigField "String", "BASE_URL", '"http://10.0.2.2:8000/"'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.debug
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+    buildFeatures {
+        viewBinding true
+        buildConfig true
+    }
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core-ktx:1.13.1'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'com.google.android.material:material:1.12.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.recyclerview:recyclerview:1.3.2'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.4'
+    implementation 'androidx.navigation:navigation-fragment-ktx:2.7.7'
+    implementation 'androidx.navigation:navigation-ui-ktx:2.7.7'
+    implementation 'com.squareup.retrofit2:retrofit:2.11.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.11.0'
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
+}

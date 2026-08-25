@@ -45,6 +45,7 @@
   const mainTabs = document.getElementById("mainTabs");
   const tabs = document.querySelectorAll(".tab");
   const manageTab = document.querySelector('.tab[data-tab="manage"]');
+  const createTab = document.querySelector('.tab[data-tab="create"]');
 
   const shopForm = document.getElementById("shopForm");
   const newShopName = document.getElementById("newShopName");
@@ -122,9 +123,10 @@
   function applyRoleUi() {
     const admin = isAdmin();
     if (manageTab) manageTab.hidden = !admin;
+    if (createTab) createTab.hidden = admin;
     if (mainTabs) {
-      mainTabs.classList.toggle("tabs-3", admin);
-      mainTabs.classList.toggle("tabs-2", !admin);
+      mainTabs.classList.remove("tabs-3");
+      mainTabs.classList.add("tabs-2");
     }
     if (currentRole) {
       if (isManager()) {
@@ -137,6 +139,9 @@
     }
     document.body.classList.toggle("role-manager", isManager());
     document.body.classList.toggle("role-admin", isAdmin());
+    if (admin && panelCreate && !panelCreate.hidden) {
+      switchTab("manage");
+    }
     if (!admin && panelManage && !panelManage.hidden) {
       switchTab("create");
     }
@@ -987,6 +992,9 @@
   function switchTab(name) {
     if (name === "manage" && !isAdmin()) {
       name = "create";
+    }
+    if (name === "create" && isAdmin()) {
+      name = "manage";
     }
     tabs.forEach((tab) => {
       const active = tab.dataset.tab === name;

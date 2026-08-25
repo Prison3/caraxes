@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
+from .app_release import router as app_release_router
 from .auth import get_session_secret, require_user, router as auth_router
 from .database import ensure_indexes
 from .deletions import router as deletions_router
@@ -45,6 +46,7 @@ app.add_middleware(
 _auth = [Depends(require_user)]
 
 app.include_router(auth_router)
+app.include_router(app_release_router)
 app.include_router(orders_router, dependencies=_auth)
 app.include_router(shops_router, dependencies=_auth)
 app.include_router(suppliers_router, dependencies=_auth)
