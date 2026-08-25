@@ -125,6 +125,7 @@
   const changePasswordBtn = document.getElementById("changePasswordBtn");
   const returnAdminBtn = document.getElementById("returnAdminBtn");
   const logoutBtn = document.getElementById("logoutBtn");
+  const androidAppBtn = document.getElementById("androidAppBtn");
 
   const passwordModal = document.getElementById("passwordModal");
   const passwordBackdrop = document.getElementById("passwordBackdrop");
@@ -2084,6 +2085,15 @@
     await api("/api/auth/logout", { method: "POST" });
     location.href = "/login";
   });
+
+  if (androidAppBtn) {
+    fetch("/api/app/info", { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((info) => {
+        if (info && info.download_url) androidAppBtn.href = info.download_url;
+      })
+      .catch(() => {});
+  }
 
   orderDate.value = todayISO();
   queryDate.value = todayISO();

@@ -1086,7 +1086,9 @@ html.is-pc .manage-grid {
 
 .topbar-user {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: 0.75rem;
   font-size: 0.875rem;
 }
@@ -1107,8 +1109,26 @@ html.is-pc .manage-grid {
   cursor: pointer;
 }
 
+.topbar-user a.logout-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.topbar-user .android-app-btn {
+  border-color: transparent;
+  background: var(--paper2);
+  color: var(--forest);
+}
+
 .topbar-user .logout-btn:hover {
   background: rgba(255, 255, 255, 0.12);
+}
+
+.topbar-user .android-app-btn:hover {
+  background: #fff;
 }
 
 .password-form {
