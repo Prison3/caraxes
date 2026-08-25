@@ -93,6 +93,12 @@ interface ApiService {
         @Body body: ManagerDisabledIn,
     ): ManagerOut
 
+    @PUT("api/users/{id}")
+    suspend fun updateManager(
+        @Path("id") id: Int,
+        @Body body: ManagerUpdate,
+    ): ManagerOut
+
     @DELETE("api/users/{id}")
     suspend fun deleteManager(
         @Path("id") id: Int,

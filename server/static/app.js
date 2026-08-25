@@ -42,9 +42,11 @@
   const panelCreate = document.getElementById("panelCreate");
   const panelQuery = document.getElementById("panelQuery");
   const panelManage = document.getElementById("panelManage");
+  const panelUsers = document.getElementById("panelUsers");
   const mainTabs = document.getElementById("mainTabs");
   const tabs = document.querySelectorAll(".tab");
   const manageTab = document.querySelector('.tab[data-tab="manage"]');
+  const usersTab = document.querySelector('.tab[data-tab="users"]');
   const createTab = document.querySelector('.tab[data-tab="create"]');
 
   const shopForm = document.getElementById("shopForm");
@@ -56,6 +58,15 @@
   const newSupplierName = document.getElementById("newSupplierName");
   const supplierMsg = document.getElementById("supplierMsg");
   const supplierManageList = document.getElementById("supplierManageList");
+
+  const managerForm = document.getElementById("managerForm");
+  const newManagerUsername = document.getElementById("newManagerUsername");
+  const newManagerPassword = document.getElementById("newManagerPassword");
+  const newManagerShopId = document.getElementById("newManagerShopId");
+  const newManagerShopPicker = document.getElementById("newManagerShopPicker");
+  const managerMsg = document.getElementById("managerMsg");
+  const managerList = document.getElementById("managerList");
+  const managerEmpty = document.getElementById("managerEmpty");
 
   const deletionList = document.getElementById("deletionList");
   const deletionTableWrap = document.getElementById("deletionTableWrap");
@@ -123,10 +134,11 @@
   function applyRoleUi() {
     const admin = isAdmin();
     if (manageTab) manageTab.hidden = !admin;
+    if (usersTab) usersTab.hidden = !admin;
     if (createTab) createTab.hidden = admin;
     if (mainTabs) {
-      mainTabs.classList.remove("tabs-3");
-      mainTabs.classList.add("tabs-2");
+      mainTabs.classList.toggle("tabs-3", admin);
+      mainTabs.classList.toggle("tabs-2", !admin);
     }
     if (currentRole) {
       if (isManager()) {
@@ -143,6 +155,9 @@
       switchTab("manage");
     }
     if (!admin && panelManage && !panelManage.hidden) {
+      switchTab("create");
+    }
+    if (!admin && panelUsers && !panelUsers.hidden) {
       switchTab("create");
     }
   }
@@ -341,6 +356,49 @@
     if (!res.ok) throw new Error(await parseError(res));
     managers = await res.json();
     renderShopManageList();
+    renderManagerList();
+  }
+
+  function managerFeedbackEl() {
+    return panelUsers && !panelUsers.hidden && managerMsg ? managerMsg : shopMsg;
+  }
+
+  function renderManagerList() {
+    if (!managerList) return;
+    managerList.innerHTML = "";
+    if (managerEmpty) managerEmpty.hidden = managers.length > 0;
+    for (const item of managers) {
+      const row = document.createElement("div");
+      row.className = "manager-row" + (item.disabled ? " is-disabled" : "");
+      const shopLabel = item.shop_name || "未绑定店铺";
+      row.innerHTML = `
+        <div class="meta">
+          <div class="name"></div>
+          <div class="shop"></div>
+        </div>
+        <div class="manager-actions">
+          <button type="button" class="edit-btn">编辑</button>
+          <button type="button" class="toggle-btn"></button>
+          <button type="button" class="delete-btn">删除</button>
+        </div>
+      `;
+      const nameEl = row.querySelector(".name");
+      nameEl.textContent = item.username;
+      if (item.disabled) {
+        const badgeEl = document.createElement("span");
+        badgeEl.className = "disabled-badge";
+        badgeEl.textContent = "已禁用";
+        nameEl.appendChild(badgeEl);
+      }
+      row.querySelector(".shop").textContent = shopLabel;
+      const toggleBtn = row.querySelector(".toggle-btn");
+      toggleBtn.classList.toggle("is-enable", Boolean(item.disabled));
+      toggleBtn.textContent = item.disabled ? "启用" : "禁用";
+      row.querySelector(".edit-btn").addEventListener("click", () => openEditManagerModal(item));
+      toggleBtn.addEventListener("click", () => toggleManagerDisabled(item));
+      row.querySelector(".delete-btn").addEventListener("click", () => deleteManager(item));
+      managerList.appendChild(row);
+    }
   }
 
   async function toggleManagerDisabled(item) {
@@ -359,11 +417,60 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ disabled: willDisable }),
     });
+    const msgEl = managerFeedbackEl();
     if (!res.ok) {
-      showMsg(shopMsg, await parseError(res), false);
+      showMsg(msgEl, await parseError(res), false);
       return;
     }
-    showMsg(shopMsg, `店长已${action}`, true);
+    showMsg(msgEl, `店长已${action}`, true);
+    await loadManagers();
+  }
+
+  async function createManager() {
+    hideMsg(managerMsg);
+    const username = (newManagerUsername?.value || "").trim();
+    const password = newManagerPassword?.value || "";
+    const shopId = Number(newManagerShopId?.value || 0);
+    if (!username) {
+      showMsg(managerMsg, "请输入用户名", false);
+      return;
+    }
+    if (password.length < 4) {
+      showMsg(managerMsg, "密码至少 4 位", false);
+      return;
+    }
+    if (!shopId) {
+      showMsg(managerMsg, "请选择绑定店铺", false);
+      return;
+    }
+    const res = await api("/api/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password, shop_id: shopId }),
+    });
+    if (!res.ok) {
+      showMsg(managerMsg, await parseError(res), false);
+      return;
+    }
+    if (newManagerUsername) newManagerUsername.value = "";
+    if (newManagerPassword) newManagerPassword.value = "";
+    showMsg(managerMsg, "店长已添加", true);
+    await loadManagers();
+  }
+
+  async function deleteManager(item) {
+    const password = await confirmDelete(`确认删除店长「${item.username}」？`);
+    if (!password) return;
+    const res = await api(`/api/users/${item.id}`, {
+      method: "DELETE",
+      headers: adminConfirmHeaders(password),
+    });
+    const msgEl = managerFeedbackEl();
+    if (!res.ok && res.status !== 204) {
+      showMsg(msgEl, await parseError(res), false);
+      return;
+    }
+    showMsg(msgEl, "店长已删除", true);
     await loadManagers();
   }
 
@@ -903,6 +1010,14 @@
       keepValue: true,
       valueKey: "id",
     });
+    if (newManagerShopPicker && newManagerShopId) {
+      renderChipPicker(newManagerShopPicker, newManagerShopId, shops, {
+        allowEmpty: false,
+        emptyHint: "暂无店铺，请先在管理页添加",
+        keepValue: true,
+        valueKey: "id",
+      });
+    }
     lockShopPickers();
 
     if (isAdmin()) {
@@ -993,6 +1108,9 @@
     if (name === "manage" && !isAdmin()) {
       name = "create";
     }
+    if (name === "users" && !isAdmin()) {
+      name = "create";
+    }
     if (name === "create" && isAdmin()) {
       name = "manage";
     }
@@ -1004,10 +1122,14 @@
     panelCreate.hidden = name !== "create";
     panelQuery.hidden = name !== "query";
     panelManage.hidden = name !== "manage";
+    if (panelUsers) panelUsers.hidden = name !== "users";
     if (name === "create") loadRecentOrders();
     if (name === "query") queryOrders();
     if (name === "manage") {
       loadCatalog().catch((err) => showMsg(shopMsg, err.message, false));
+    }
+    if (name === "users") {
+      loadCatalog().catch((err) => showMsg(managerMsg, err.message, false));
     }
   }
 
@@ -1139,10 +1261,101 @@
     editOrderBackdrop.addEventListener("click", closeEditOrderModal);
   }
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && editOrderModal && !editOrderModal.hidden) {
+    if (e.key !== "Escape") return;
+    if (editOrderModal && !editOrderModal.hidden) {
       closeEditOrderModal();
     }
+    if (editManagerModal && !editManagerModal.hidden) {
+      closeEditManagerModal();
+    }
   });
+
+  const editManagerModal = document.getElementById("editManagerModal");
+  const editManagerBackdrop = document.getElementById("editManagerBackdrop");
+  const editManagerForm = document.getElementById("editManagerForm");
+  const editManagerUsername = document.getElementById("editManagerUsername");
+  const editManagerPassword = document.getElementById("editManagerPassword");
+  const editManagerShopId = document.getElementById("editManagerShopId");
+  const editManagerShopPicker = document.getElementById("editManagerShopPicker");
+  const editManagerMsg = document.getElementById("editManagerMsg");
+  const editManagerSave = document.getElementById("editManagerSave");
+  const editManagerCancel = document.getElementById("editManagerCancel");
+  let editingManagerId = null;
+
+  function closeEditManagerModal() {
+    if (!editManagerModal) return;
+    editManagerModal.hidden = true;
+    editingManagerId = null;
+    hideMsg(editManagerMsg);
+    if (editManagerSave) editManagerSave.disabled = false;
+    if (editManagerPassword) editManagerPassword.value = "";
+  }
+
+  function openEditManagerModal(item) {
+    if (!editManagerModal || !isAdmin()) return;
+    editingManagerId = item.id;
+    hideMsg(editManagerMsg);
+    if (editManagerUsername) editManagerUsername.value = item.username || "";
+    if (editManagerPassword) editManagerPassword.value = "";
+    if (editManagerShopId) editManagerShopId.value = item.shop_id ? String(item.shop_id) : "";
+    renderChipPicker(editManagerShopPicker, editManagerShopId, shops, {
+      allowEmpty: false,
+      emptyHint: "暂无店铺，请先在管理页添加",
+      keepValue: true,
+      valueKey: "id",
+    });
+    editManagerModal.hidden = false;
+    if (editManagerUsername) editManagerUsername.focus();
+  }
+
+  async function saveEditManager(e) {
+    e.preventDefault();
+    if (!editingManagerId) return;
+    hideMsg(editManagerMsg);
+    const username = (editManagerUsername?.value || "").trim();
+    const password = editManagerPassword?.value || "";
+    const shopId = Number(editManagerShopId?.value || 0);
+    if (!username) {
+      showMsg(editManagerMsg, "请输入用户名", false);
+      return;
+    }
+    if (password && password.length < 4) {
+      showMsg(editManagerMsg, "密码至少 4 位", false);
+      return;
+    }
+    if (!shopId) {
+      showMsg(editManagerMsg, "请选择绑定店铺", false);
+      return;
+    }
+    const payload = { username, shop_id: shopId };
+    if (password) payload.password = password;
+    if (editManagerSave) editManagerSave.disabled = true;
+    try {
+      const res = await api(`/api/users/${editingManagerId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(await parseError(res));
+      closeEditManagerModal();
+      showMsg(managerFeedbackEl(), "店长已更新", true);
+      await loadManagers();
+    } catch (err) {
+      showMsg(editManagerMsg, err.message || "保存失败", false);
+    } finally {
+      if (editManagerSave) editManagerSave.disabled = false;
+    }
+  }
+
+  if (editManagerForm) {
+    editManagerForm.addEventListener("submit", saveEditManager);
+  }
+  if (editManagerCancel) {
+    editManagerCancel.addEventListener("click", closeEditManagerModal);
+  }
+  if (editManagerBackdrop) {
+    editManagerBackdrop.addEventListener("click", closeEditManagerModal);
+  }
 
   function appendOrderRow(tbody, order) {
     const tr = document.createElement("tr");
@@ -1411,6 +1624,13 @@
     showMsg(shopMsg, "店铺已添加，店长账号已自动创建（用户名=店名，密码 12345）", true);
     await loadCatalog();
   });
+
+  if (managerForm) {
+    managerForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      await createManager();
+    });
+  }
 
   supplierForm.addEventListener("submit", async (e) => {
     e.preventDefault();

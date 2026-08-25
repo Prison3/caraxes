@@ -21,6 +21,14 @@
         android:name="com.caraxes.app.ui.manage.ManageFragment"
         android:label="管理" />
     <fragment
+        android:id="@+id/staffFragment"
+        android:name="com.caraxes.app.ui.staff.StaffFragment"
+        android:label="用户" />
+    <fragment
+        android:id="@+id/staffEditFragment"
+        android:name="com.caraxes.app.ui.staff.StaffEditFragment"
+        android:label="编辑用户" />
+    <fragment
         android:id="@+id/meFragment"
         android:name="com.caraxes.app.ui.me.MeFragment"
         android:label="我的" />

@@ -13,6 +13,10 @@
         android:icon="@drawable/ic_nav_manage"
         android:title="@string/nav_manage" />
     <item
+        android:id="@+id/staffFragment"
+        android:icon="@drawable/ic_nav_staff"
+        android:title="@string/nav_staff" />
+    <item
         android:id="@+id/meFragment"
         android:icon="@drawable/ic_nav_me"
         android:title="@string/nav_me" />

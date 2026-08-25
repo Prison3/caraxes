@@ -65,13 +65,14 @@ object Session {
 
     fun allowedNavIds(context: Context): Set<Int> =
         if (isAdmin(context)) {
-            setOf(R.id.queryFragment, R.id.manageFragment, R.id.meFragment)
+            setOf(R.id.queryFragment, R.id.manageFragment, R.id.staffFragment, R.id.meFragment)
         } else {
             setOf(R.id.createFragment, R.id.queryFragment, R.id.meFragment)
         }
 
     fun isAllowedDestination(context: Context, destId: Int): Boolean {
         if (destId == R.id.loginFragment) return true
+        if (destId == R.id.staffEditFragment) return isAdmin(context)
         return destId in allowedNavIds(context)
     }
 

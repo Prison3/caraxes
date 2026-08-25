@@ -68,6 +68,12 @@ class ManagerDisabledIn(BaseModel):
     disabled: bool = Field(..., description="是否禁用")
 
 
+class ManagerUpdate(BaseModel):
+    username: Optional[str] = Field(None, min_length=1, max_length=64, description="店长用户名")
+    password: Optional[str] = Field(None, min_length=4, max_length=128, description="登录密码")
+    shop_id: Optional[int] = Field(None, gt=0, description="绑定店铺 ID")
+
+
 class ManagerOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

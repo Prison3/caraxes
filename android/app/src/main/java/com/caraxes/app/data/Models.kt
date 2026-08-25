@@ -78,6 +78,12 @@ data class ManagerDisabledIn(
     val disabled: Boolean,
 )
 
+data class ManagerUpdate(
+    val username: String? = null,
+    val password: String? = null,
+    val shop_id: Int? = null,
+)
+
 data class ManagerOut(
     val id: Int = 0,
     val username: String = "",

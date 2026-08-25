@@ -12,7 +12,7 @@ from .confirm import require_admin_confirm
 from .database import get_db, next_id
 from .models import ROLE_MANAGER, User, utcnow
 from .roles import require_admin
-from .schemas import ManagerCreate, ManagerDisabledIn, ManagerOut
+from .schemas import ManagerCreate, ManagerDisabledIn, ManagerOut, ManagerUpdate
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
@@ -81,6 +81,40 @@ def set_manager_disabled(
         {"_id": user_id},
         {"$set": {"disabled": bool(payload.disabled)}},
     )
+    updated = db.users.find_one({"_id": user_id})
+    return user_from_doc(db, updated)
+
+
+@router.put("/{user_id}", response_model=ManagerOut)
+def update_manager(
+    user_id: int,
+    payload: ManagerUpdate,
+    db: Database = Depends(get_db),
+    _: User = Depends(require_admin),
+):
+    _require_manager_doc(db, user_id)
+    data = payload.model_dump(exclude_unset=True)
+    updates: dict = {}
+    if "username" in data and data["username"] is not None:
+        username = str(data["username"]).strip()
+        if not username:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="用户名不能为空")
+        conflict = db.users.find_one({"username": username, "_id": {"$ne": user_id}})
+        if conflict:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="用户名已存在")
+        updates["username"] = username
+    if "password" in data and data["password"]:
+        updates["password_hash"] = hash_password(str(data["password"]))
+    if "shop_id" in data and data["shop_id"] is not None:
+        shop = require_shop(db, int(data["shop_id"]))
+        updates["shop_id"] = int(shop["_id"])
+        updates["shop_name"] = shop["name"]
+    if not updates:
+        return user_from_doc(db, db.users.find_one({"_id": user_id}))
+    try:
+        db.users.update_one({"_id": user_id}, {"$set": updates})
+    except DuplicateKeyError:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="用户名已存在")
     updated = db.users.find_one({"_id": user_id})
     return user_from_doc(db, updated)
 

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>供应商管理系统</title>
   <script src="/static/device.js?v=2"></script>
-  <link rel="stylesheet" href="/static/style.css?v=20260825a" />
+  <link rel="stylesheet" href="/static/style.css?v=20260825b" />
 </head>
 <body>
   <header class="topbar">
@@ -22,6 +22,7 @@
     <nav id="mainTabs" class="tabs tabs-2" role="tablist">
       <button type="button" class="tab" data-tab="query" role="tab" aria-selected="false">查询</button>
       <button type="button" class="tab tab-admin" data-tab="manage" role="tab" aria-selected="false">管理</button>
+      <button type="button" class="tab tab-admin" data-tab="users" role="tab" aria-selected="false">用户</button>
       <button type="button" class="tab tab-create" data-tab="create" role="tab" aria-selected="true">录入</button>
     </nav>
 
@@ -196,6 +197,24 @@
         <p id="deletionEmpty" class="empty">暂无删除记录</p>
       </div>
     </section>
+
+    <section id="panelUsers" class="panel tab-panel" role="tabpanel" hidden>
+      <h2>用户管理</h2>
+      <p class="section-lead">管理店长账号：添加、改绑店铺、启用/禁用、删除。</p>
+      <form id="managerForm" class="manager-form">
+        <input type="text" id="newManagerUsername" placeholder="用户名" maxlength="64" required autocomplete="off" />
+        <input type="password" id="newManagerPassword" placeholder="密码（至少 4 位）" minlength="4" maxlength="128" required autocomplete="new-password" />
+        <div class="choice-field">
+          <span class="choice-label">绑定店铺</span>
+          <input type="hidden" id="newManagerShopId" value="" />
+          <div id="newManagerShopPicker" class="chip-grid" role="listbox" aria-label="选择店铺"></div>
+        </div>
+        <button type="submit">添加店长</button>
+      </form>
+      <p id="managerMsg" class="msg" hidden></p>
+      <div id="managerList" class="manager-list"></div>
+      <p id="managerEmpty" class="empty">暂无店长账号</p>
+    </section>
   </main>
 
   <div id="dupModal" class="modal" hidden>
@@ -293,6 +312,33 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=20260825a"></script>
+  <div id="editManagerModal" class="modal" hidden>
+    <div class="modal-backdrop" id="editManagerBackdrop"></div>
+    <div class="modal-card edit-order-card" role="dialog" aria-modal="true" aria-labelledby="editManagerTitle">
+      <h3 id="editManagerTitle">编辑店长</h3>
+      <form id="editManagerForm" class="edit-order-form">
+        <label>
+          用户名
+          <input type="text" id="editManagerUsername" maxlength="64" required autocomplete="off" />
+        </label>
+        <label>
+          密码（不改可留空）
+          <input type="password" id="editManagerPassword" minlength="4" maxlength="128" autocomplete="new-password" />
+        </label>
+        <div class="choice-field">
+          <span class="choice-label">绑定店铺</span>
+          <input type="hidden" id="editManagerShopId" value="" />
+          <div id="editManagerShopPicker" class="chip-grid" role="listbox" aria-label="选择店铺"></div>
+        </div>
+        <p id="editManagerMsg" class="msg" hidden></p>
+        <div class="modal-actions">
+          <button type="submit" id="editManagerSave">保存</button>
+          <button type="button" id="editManagerCancel" class="btn-secondary">取消</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/static/app.js?v=20260825b"></script>
 </body>
 </html>

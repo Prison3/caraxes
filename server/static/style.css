@@ -147,6 +147,10 @@ html.is-pc .shop-manage-list {
   grid-template-columns: 1fr 1fr 1fr;
 }
 
+.tab[hidden] {
+  display: none;
+}
+
 .tab {
   border: 0;
   border-radius: 9px;
@@ -701,6 +705,12 @@ html.is-pc .login-shell {
 
 .section-gap {
   margin-top: 1.75rem !important;
+}
+
+.section-lead {
+  margin: -0.5rem 0 1rem;
+  font-size: var(--fs-sm);
+  color: var(--muted);
 }
 
 .manage-subhead {
@@ -1442,6 +1452,10 @@ html.is-mobile .orders-readable {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.tabs.tabs-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .manager-form {
   display: grid;
   gap: 0.65rem;
@@ -1451,6 +1465,11 @@ html.is-mobile .orders-readable {
 .manager-form input[type="text"],
 .manager-form input[type="password"] {
   width: 100%;
+}
+
+.manager-form button[type="submit"] {
+  background: var(--forest);
+  color: #fff;
 }
 
 .manager-list {
@@ -1526,6 +1545,16 @@ html.is-mobile .orders-readable {
   color: #15803d;
 }
 
+.manager-row .edit-btn {
+  border: 0;
+  background: transparent;
+  color: var(--forest, #1b4d3e);
+  font-size: var(--fs-xs, 0.75rem);
+  cursor: pointer;
+  padding: 0.2rem 0.3rem;
+  min-height: 32px;
+}
+
 .manager-row .delete-btn {
   border: 0;
   background: transparent;
@@ -1534,6 +1563,16 @@ html.is-mobile .orders-readable {
   cursor: pointer;
   padding: 0.2rem 0.3rem;
   min-height: 32px;
+}
+
+html.is-mobile .manager-row {
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+html.is-mobile .manager-actions {
+  width: 100%;
+  justify-content: flex-end;
 }
 
 .choice-field.is-locked .chip:not(.active) {

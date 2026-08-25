@@ -33,8 +33,9 @@ class MainActivity : AppCompatActivity() {
                 return@addOnDestinationChangedListener
             }
             val isLogin = destination.id == R.id.loginFragment
-            binding.bottomNav.visibility = if (isLogin) View.GONE else View.VISIBLE
-            binding.topBar.visibility = if (isLogin) View.GONE else View.VISIBLE
+            val isEdit = destination.id == R.id.staffEditFragment
+            binding.bottomNav.visibility = if (isLogin || isEdit) View.GONE else View.VISIBLE
+            binding.topBar.visibility = if (isLogin || isEdit) View.GONE else View.VISIBLE
             if (!isLogin) refreshUsername()
         }
 
