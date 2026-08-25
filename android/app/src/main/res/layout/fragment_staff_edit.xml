@@ -11,7 +11,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:paddingHorizontal="16dp"
-        android:paddingTop="8dp"
+        android:paddingTop="12dp"
         android:paddingBottom="24dp">
 
         <LinearLayout
@@ -40,19 +40,14 @@
                 android:fontFamily="serif"
                 android:text="添加店长"
                 android:textColor="@color/pine"
-                android:textSize="20sp"
+                android:textSize="22sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
         <TextView
             android:id="@+id/pageSubtitle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:layout_marginBottom="14dp"
-            android:text="设置用户名、密码和绑定店铺后保存"
-            android:textColor="@color/ink_soft"
-            android:textSize="13sp" />
+            style="@style/Text.PageSubtitle"
+            android:text="设置用户名、密码和绑定店铺后保存" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -135,9 +130,7 @@
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
                 android:text="保存"
-                android:textSize="16sp"
-                app:backgroundTint="@color/pine"
-                app:cornerRadius="12dp" />
+                android:textSize="16sp" />
         </LinearLayout>
 
         <com.google.android.material.button.MaterialButton
@@ -149,7 +142,6 @@
             android:text="删除店长"
             android:textColor="@color/cinnabar"
             android:visibility="gone"
-            app:cornerRadius="12dp"
             app:strokeColor="@color/cinnabar" />
     </LinearLayout>
 </ScrollView>

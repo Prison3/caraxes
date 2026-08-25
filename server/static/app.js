@@ -42,10 +42,12 @@
   const panelCreate = document.getElementById("panelCreate");
   const panelQuery = document.getElementById("panelQuery");
   const panelManage = document.getElementById("panelManage");
+  const panelCost = document.getElementById("panelCost");
   const panelUsers = document.getElementById("panelUsers");
   const mainTabs = document.getElementById("mainTabs");
   const tabs = document.querySelectorAll(".tab");
   const manageTab = document.querySelector('.tab[data-tab="manage"]');
+  const costTab = document.querySelector('.tab[data-tab="cost"]');
   const usersTab = document.querySelector('.tab[data-tab="users"]');
   const createTab = document.querySelector('.tab[data-tab="create"]');
 
@@ -53,11 +55,15 @@
   const newShopName = document.getElementById("newShopName");
   const shopMsg = document.getElementById("shopMsg");
   const shopManageList = document.getElementById("shopManageList");
+  const shopTableWrap = document.getElementById("shopTableWrap");
+  const shopEmpty = document.getElementById("shopEmpty");
 
   const supplierForm = document.getElementById("supplierForm");
   const newSupplierName = document.getElementById("newSupplierName");
   const supplierMsg = document.getElementById("supplierMsg");
   const supplierManageList = document.getElementById("supplierManageList");
+  const supplierTableWrap = document.getElementById("supplierTableWrap");
+  const supplierEmpty = document.getElementById("supplierEmpty");
 
   const managerForm = document.getElementById("managerForm");
   const newManagerUsername = document.getElementById("newManagerUsername");
@@ -67,6 +73,24 @@
   const managerMsg = document.getElementById("managerMsg");
   const managerList = document.getElementById("managerList");
   const managerEmpty = document.getElementById("managerEmpty");
+
+  const costForm = document.getElementById("costForm");
+  const costGroupRow = document.getElementById("costGroupRow");
+  const costPeriodRow = document.getElementById("costPeriodRow");
+  const costMonthLabel = document.getElementById("costMonthLabel");
+  const costDateLabel = document.getElementById("costDateLabel");
+  const costMonth = document.getElementById("costMonth");
+  const costDate = document.getElementById("costDate");
+  const costBtn = document.getElementById("costBtn");
+  const costMsg = document.getElementById("costMsg");
+  const costListMeta = document.getElementById("costListMeta");
+  const costSumMeta = document.getElementById("costSumMeta");
+  const costTableWrap = document.getElementById("costTableWrap");
+  const costNameHead = document.getElementById("costNameHead");
+  const costList = document.getElementById("costList");
+  const costEmpty = document.getElementById("costEmpty");
+  let costGroupBy = "shop";
+  let costPeriod = "month";
 
   const deletionList = document.getElementById("deletionList");
   const deletionTableWrap = document.getElementById("deletionTableWrap");
@@ -134,10 +158,12 @@
   function applyRoleUi() {
     const admin = isAdmin();
     if (manageTab) manageTab.hidden = !admin;
+    if (costTab) costTab.hidden = !admin;
     if (usersTab) usersTab.hidden = !admin;
     if (createTab) createTab.hidden = admin;
     if (mainTabs) {
-      mainTabs.classList.toggle("tabs-3", admin);
+      mainTabs.classList.toggle("tabs-4", admin);
+      mainTabs.classList.toggle("tabs-3", false);
       mainTabs.classList.toggle("tabs-2", !admin);
     }
     if (currentRole) {
@@ -160,6 +186,9 @@
     if (!admin && panelUsers && !panelUsers.hidden) {
       switchTab("create");
     }
+    if (!admin && panelCost && !panelCost.hidden) {
+      switchTab("create");
+    }
   }
 
   function lockShopPickers() {
@@ -175,175 +204,47 @@
     queryShopPicker?.closest(".choice-field")?.classList.add("is-locked");
   }
 
-  function refreshIconHtml() {
-    return `<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-      <path d="M20 12a8 8 0 1 1-2.2-5.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
-      <path d="M20 5v5h-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>`;
-  }
-
-  function makeRefreshTotalBtn(onClick) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "icon-refresh-btn";
-    btn.setAttribute("aria-label", "刷新本月金额");
-    btn.title = "刷新本月金额";
-    btn.innerHTML = refreshIconHtml();
-    btn.addEventListener("click", async () => {
-      if (btn.disabled) return;
-      btn.disabled = true;
-      btn.classList.add("is-spinning");
-      try {
-        await onClick();
-      } finally {
-        btn.disabled = false;
-        btn.classList.remove("is-spinning");
-      }
-    });
-    return btn;
-  }
-
-  async function refreshShopMonthTotal(shopId, totalEl, msgEl) {
-    const res = await api(`/api/shops/${shopId}`);
-    if (!res.ok) throw new Error(await parseError(res));
-    const shop = await res.json();
-    const idx = shops.findIndex((s) => Number(s.id) === Number(shopId));
-    if (idx >= 0) {
-      shops[idx] = { ...shops[idx], month_total: shop.month_total };
-    }
-    if (totalEl) {
-      totalEl.textContent = `本月 ¥${formatMoney(Number(shop.month_total || 0))}`;
-    }
-    if (msgEl) showMsg(msgEl, "本月金额已刷新", true);
-  }
-
-  async function refreshSupplierMonthTotal(supplierId, totalEl, msgEl) {
-    const res = await api(`/api/suppliers/${supplierId}`);
-    if (!res.ok) throw new Error(await parseError(res));
-    const item = await res.json();
-    const idx = suppliers.findIndex((s) => Number(s.id) === Number(supplierId));
-    if (idx >= 0) {
-      suppliers[idx] = { ...suppliers[idx], month_total: item.month_total };
-    }
-    if (totalEl) {
-      totalEl.textContent = `本月 ¥${formatMoney(Number(item.month_total || 0))}`;
-    }
-    if (msgEl) showMsg(msgEl, "本月金额已刷新", true);
-  }
-
   function renderShopManageList() {
     if (!shopManageList) return;
     shopManageList.innerHTML = "";
-    if (!shops.length) {
-      const empty = document.createElement("p");
-      empty.className = "chip-empty";
-      empty.textContent = "暂无店铺";
-      shopManageList.appendChild(empty);
-      return;
-    }
+    const empty = !shops.length;
+    if (shopTableWrap) shopTableWrap.hidden = empty;
+    if (shopEmpty) shopEmpty.hidden = !empty;
     for (const shop of shops) {
-      const shopManagers = managers.filter((m) => Number(m.shop_id) === Number(shop.id));
-      const card = document.createElement("div");
-      card.className = "shop-manage-card";
-      card.innerHTML = `
-        <div class="shop-manage-head">
-          <span class="name"></span>
-          <span class="manager-name"></span>
-        </div>
-        <div class="shop-month-row">
-          <span class="shop-month-total"></span>
-        </div>
-        <div class="manage-actions"></div>
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="col-name"></td>
+        <td class="ops">
+          <button type="button" class="edit-btn">改名</button>
+          <button type="button" class="delete-btn">删除</button>
+        </td>
       `;
-      card.querySelector(".name").textContent = shop.name;
-      const totalEl = card.querySelector(".shop-month-total");
-      const monthTotal = Number(shop.month_total || 0);
-      totalEl.textContent = `本月 ¥${formatMoney(monthTotal)}`;
-      card.querySelector(".shop-month-row").appendChild(
-        makeRefreshTotalBtn(async () => {
-          try {
-            await refreshShopMonthTotal(shop.id, totalEl, shopMsg);
-          } catch (err) {
-            showMsg(shopMsg, err.message || "刷新失败", false);
-          }
-        })
-      );
-      const managerNameEl = card.querySelector(".manager-name");
-      if (shopManagers.length) {
-        managerNameEl.textContent = `店长：${shopManagers.map((m) => m.username).join("、")}`;
-        if (shopManagers.every((m) => m.disabled)) {
-          managerNameEl.classList.add("is-disabled");
-        }
-      } else {
-        managerNameEl.textContent = "暂无店长";
-        managerNameEl.classList.add("is-empty");
-      }
-      const actions = card.querySelector(".manage-actions");
-      for (const mgr of shopManagers) {
-        const toggleBtn = document.createElement("button");
-        toggleBtn.type = "button";
-        toggleBtn.className = "toggle-btn" + (mgr.disabled ? " is-enable" : "");
-        toggleBtn.textContent = mgr.disabled ? "启用" : "禁用";
-        toggleBtn.addEventListener("click", () => toggleManagerDisabled(mgr));
-        actions.appendChild(toggleBtn);
-      }
-      const renameBtn = document.createElement("button");
-      renameBtn.type = "button";
-      renameBtn.className = "rename-btn";
-      renameBtn.textContent = "改名";
-      renameBtn.addEventListener("click", () => renameShop(shop));
-      actions.appendChild(renameBtn);
-      const deleteBtn = document.createElement("button");
-      deleteBtn.type = "button";
-      deleteBtn.className = "delete-btn";
-      deleteBtn.textContent = "删除";
-      deleteBtn.addEventListener("click", () => deleteShop(shop));
-      actions.appendChild(deleteBtn);
-      shopManageList.appendChild(card);
+      tr.querySelector(".col-name").textContent = shop.name;
+      tr.querySelector(".edit-btn").addEventListener("click", () => renameShop(shop));
+      tr.querySelector(".delete-btn").addEventListener("click", () => deleteShop(shop));
+      shopManageList.appendChild(tr);
     }
   }
 
   function renderSupplierManageList() {
     if (!supplierManageList) return;
     supplierManageList.innerHTML = "";
-    if (!suppliers.length) {
-      const empty = document.createElement("p");
-      empty.className = "chip-empty";
-      empty.textContent = "暂无供应商";
-      supplierManageList.appendChild(empty);
-      return;
-    }
+    const empty = !suppliers.length;
+    if (supplierTableWrap) supplierTableWrap.hidden = empty;
+    if (supplierEmpty) supplierEmpty.hidden = !empty;
     for (const item of suppliers) {
-      const card = document.createElement("div");
-      card.className = "shop-manage-card";
-      card.innerHTML = `
-        <div class="shop-manage-head">
-          <span class="name"></span>
-        </div>
-        <div class="shop-month-row">
-          <span class="shop-month-total"></span>
-        </div>
-        <div class="manage-actions">
-          <button type="button" class="rename-btn">改名</button>
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="col-name"></td>
+        <td class="ops">
+          <button type="button" class="edit-btn">改名</button>
           <button type="button" class="delete-btn">删除</button>
-        </div>
+        </td>
       `;
-      card.querySelector(".name").textContent = item.name;
-      const totalEl = card.querySelector(".shop-month-total");
-      const monthTotal = Number(item.month_total || 0);
-      totalEl.textContent = `本月 ¥${formatMoney(monthTotal)}`;
-      card.querySelector(".shop-month-row").appendChild(
-        makeRefreshTotalBtn(async () => {
-          try {
-            await refreshSupplierMonthTotal(item.id, totalEl, supplierMsg);
-          } catch (err) {
-            showMsg(supplierMsg, err.message || "刷新失败", false);
-          }
-        })
-      );
-      card.querySelector(".rename-btn").addEventListener("click", () => renameSupplier(item));
-      card.querySelector(".delete-btn").addEventListener("click", () => deleteSupplier(item));
-      supplierManageList.appendChild(card);
+      tr.querySelector(".col-name").textContent = item.name;
+      tr.querySelector(".edit-btn").addEventListener("click", () => renameSupplier(item));
+      tr.querySelector(".delete-btn").addEventListener("click", () => deleteSupplier(item));
+      supplierManageList.appendChild(tr);
     }
   }
 
@@ -355,7 +256,6 @@
     const res = await api("/api/users");
     if (!res.ok) throw new Error(await parseError(res));
     managers = await res.json();
-    renderShopManageList();
     renderManagerList();
   }
 
@@ -1021,6 +921,7 @@
     lockShopPickers();
 
     if (isAdmin()) {
+      renderShopManageList();
       renderSupplierManageList();
       await Promise.all([loadManagers(), loadDeletions()]);
     }
@@ -1111,6 +1012,9 @@
     if (name === "users" && !isAdmin()) {
       name = "create";
     }
+    if (name === "cost" && !isAdmin()) {
+      name = "create";
+    }
     if (name === "create" && isAdmin()) {
       name = "manage";
     }
@@ -1122,14 +1026,96 @@
     panelCreate.hidden = name !== "create";
     panelQuery.hidden = name !== "query";
     panelManage.hidden = name !== "manage";
+    if (panelCost) panelCost.hidden = name !== "cost";
     if (panelUsers) panelUsers.hidden = name !== "users";
     if (name === "create") loadRecentOrders();
     if (name === "query") queryOrders();
     if (name === "manage") {
       loadCatalog().catch((err) => showMsg(shopMsg, err.message, false));
     }
+    if (name === "cost") {
+      loadCosts().catch((err) => showMsg(costMsg, err.message, false));
+    }
     if (name === "users") {
       loadCatalog().catch((err) => showMsg(managerMsg, err.message, false));
+    }
+  }
+
+  function currentMonthISO() {
+    return todayISO().slice(0, 7);
+  }
+
+  function applyCostPeriodUi() {
+    const monthly = costPeriod === "month";
+    if (costMonthLabel) costMonthLabel.hidden = !monthly;
+    if (costDateLabel) costDateLabel.hidden = monthly;
+    if (costPeriodRow) {
+      costPeriodRow.querySelectorAll(".mode-btn").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.costPeriod === costPeriod);
+      });
+    }
+    if (costGroupRow) {
+      costGroupRow.querySelectorAll(".mode-btn").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.costGroup === costGroupBy);
+      });
+    }
+  }
+
+  async function loadCosts() {
+    if (!isAdmin() || !costList) return;
+    hideMsg(costMsg);
+    const params = new URLSearchParams();
+    params.set("group_by", costGroupBy);
+    params.set("period", costPeriod);
+    if (costPeriod === "month") {
+      params.set("month", (costMonth?.value || currentMonthISO()));
+    } else {
+      params.set("order_date", (costDate?.value || todayISO()));
+    }
+    if (costBtn) costBtn.disabled = true;
+    if (costListMeta) costListMeta.textContent = "加载中…";
+    try {
+      const res = await api(`/api/costs?${params.toString()}`);
+      if (!res.ok) throw new Error(await parseError(res));
+      renderCostReport(await res.json());
+    } catch (err) {
+      renderCostReport({ items: [], total: 0, count: 0, group_by: costGroupBy });
+      showMsg(costMsg, err.message || "查询失败", false);
+    } finally {
+      if (costBtn) costBtn.disabled = false;
+    }
+  }
+
+  function renderCostReport(report) {
+    const items = report.items || [];
+    const kind = report.group_by === "supplier" ? "供应商" : "店铺";
+    if (costNameHead) costNameHead.textContent = kind;
+    if (costList) costList.innerHTML = "";
+    if (costTableWrap) costTableWrap.hidden = items.length === 0;
+    if (costEmpty) costEmpty.hidden = items.length > 0;
+    if (costListMeta) {
+      costListMeta.textContent = items.length ? `共 ${items.length} 个${kind}` : "";
+    }
+    if (costSumMeta) {
+      if (!items.length) {
+        costSumMeta.hidden = true;
+        costSumMeta.textContent = "";
+      } else {
+        costSumMeta.hidden = false;
+        costSumMeta.textContent = `合计 ${Number(report.count || 0)} 笔  ·  ¥${formatMoney(report.total || 0)}`;
+      }
+    }
+    for (const item of items) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="col-name"></td>
+        <td class="num col-count"></td>
+        <td class="num col-amount"></td>
+      `;
+      tr.querySelector(".col-name").textContent = item.name || "";
+      tr.querySelector(".col-count").textContent = String(item.count || 0);
+      tr.querySelector(".col-amount").textContent = `¥${formatMoney(item.total || 0)}`;
+      costList.appendChild(tr);
     }
   }
 
@@ -1632,6 +1618,33 @@
     });
   }
 
+  if (costForm) {
+    costForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      await loadCosts();
+    });
+  }
+  if (costGroupRow) {
+    costGroupRow.querySelectorAll(".mode-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        costGroupBy = btn.dataset.costGroup || "shop";
+        applyCostPeriodUi();
+        loadCosts();
+      });
+    });
+  }
+  if (costPeriodRow) {
+    costPeriodRow.querySelectorAll(".mode-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        costPeriod = btn.dataset.costPeriod || "month";
+        applyCostPeriodUi();
+        loadCosts();
+      });
+    });
+  }
+  if (costMonth) costMonth.addEventListener("change", () => loadCosts());
+  if (costDate) costDate.addEventListener("change", () => loadCosts());
+
   supplierForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     hideMsg(supplierMsg);
@@ -1849,6 +1862,9 @@
 
   orderDate.value = todayISO();
   queryDate.value = todayISO();
+  if (costDate) costDate.value = todayISO();
+  if (costMonth) costMonth.value = currentMonthISO();
+  applyCostPeriodUi();
 
   (async () => {
     const meRes = await api("/api/auth/me");

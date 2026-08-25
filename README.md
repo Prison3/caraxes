@@ -10,7 +10,7 @@ Web / Android 客户端向服务端上报每日供应商订单（日期、店铺
 - 真机：登录页「服务器设置」填写电脑局域网 IP，例如 `192.168.1.8:8000`
 - 默认账号：`admin` / `admin123`；店长用户名=店铺名、密码 `12345`
 
-功能与 Web 对齐：店长可录入/查询，管理员可查询/管理/用户；「我的」双方都有。认证使用 Session Cookie（`caraxes_session`）。
+功能与 Web 对齐：店长可录入/查询，管理员可查询/管理/成本/用户；「我的」双方都有。认证使用 Session Cookie（`caraxes_session`）。
 
 发布 APK：
 
@@ -81,7 +81,7 @@ Web 提交页：`http://127.0.0.1:8000/`
 | `GET` | `/api/suppliers` | 供应商列表 |
 | `POST` | `/api/suppliers` | 添加供应商 `{"name":"蔬菜"}` |
 | `DELETE` | `/api/suppliers/{id}` | 删除供应商 |
-| `GET` | `/api/users` | 店长列表（管理员） |
+| `GET` | `/api/costs` | 成本汇总（管理员；`group_by=shop|supplier`，`period=day|month`） |
 | `POST` | `/api/users` | 添加店长 |
 | `PUT` | `/api/users/{id}` | 更新店长用户名/密码/店铺 |
 | `PUT` | `/api/users/{id}/disabled` | 启用/禁用店长 |

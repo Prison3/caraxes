@@ -1,16 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="10dp"
+    android:layout_marginBottom="8dp"
     android:background="@drawable/bg_card"
     android:clickable="true"
     android:focusable="true"
     android:foreground="?attr/selectableItemBackground"
     android:orientation="vertical"
-    android:paddingHorizontal="16dp"
-    android:paddingVertical="14dp">
+    android:paddingHorizontal="14dp"
+    android:paddingVertical="12dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -23,7 +22,9 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:ellipsize="end"
             android:fontFamily="serif"
+            android:maxLines="1"
             android:textColor="@color/ink"
             android:textSize="16sp"
             android:textStyle="bold" />
@@ -44,7 +45,7 @@
         android:id="@+id/subtitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
+        android:layout_marginTop="4dp"
         android:textColor="@color/ink_soft"
         android:textSize="13sp" />
 
@@ -56,29 +57,17 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/toggleBtn"
-            style="@style/Widget.Caraxes.Button.Ghost"
+            style="@style/Widget.Caraxes.Button.Ghost.Compact"
             android:layout_width="wrap_content"
             android:layout_height="36dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:minWidth="0dp"
-            android:paddingHorizontal="14dp"
-            android:text="禁用"
-            app:cornerRadius="10dp" />
+            android:text="禁用" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/deleteBtn"
-            style="@style/Widget.Caraxes.Button.Ghost"
+            style="@style/Widget.Caraxes.Button.Ghost.Danger"
             android:layout_width="wrap_content"
             android:layout_height="36dp"
             android:layout_marginStart="8dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:minWidth="0dp"
-            android:paddingHorizontal="14dp"
-            android:text="删除"
-            android:textColor="@color/cinnabar"
-            app:cornerRadius="10dp"
-            app:strokeColor="@color/cinnabar" />
+            android:text="删除" />
     </LinearLayout>
 </LinearLayout>

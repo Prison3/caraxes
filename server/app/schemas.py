@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -106,6 +106,23 @@ class SupplierOut(BaseModel):
     name: str
     created_at: datetime
     month_total: float = 0.0
+
+
+class CostItem(BaseModel):
+    id: int
+    name: str
+    total: float
+    count: int = 0
+
+
+class CostReportOut(BaseModel):
+    group_by: str
+    period: str
+    date_from: date
+    date_to: date
+    total: float
+    count: int = 0
+    items: List[CostItem] = []
 
 
 class AppReleaseOut(BaseModel):

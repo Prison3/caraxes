@@ -105,6 +105,14 @@ interface ApiService {
         @Header("X-Admin-Confirm") password: String,
     )
 
+    @GET("api/costs")
+    suspend fun listCosts(
+        @Query("group_by") groupBy: String,
+        @Query("period") period: String,
+        @Query("order_date") orderDate: String? = null,
+        @Query("month") month: String? = null,
+    ): CostReportOut
+
     @GET("api/deletions")
     suspend fun listDeletions(@Query("limit") limit: Int = 30): List<DeletionOut>
 

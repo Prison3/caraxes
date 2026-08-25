@@ -1,31 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/paper"
     android:orientation="vertical"
     android:paddingHorizontal="16dp"
-    android:paddingTop="8dp"
+    android:paddingTop="12dp"
     android:paddingBottom="12dp">
 
     <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:fontFamily="serif"
-        android:text="用户管理"
-        android:textColor="@color/pine"
-        android:textSize="24sp"
-        android:textStyle="bold" />
+        style="@style/Text.PageTitle"
+        android:text="用户管理" />
 
     <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:layout_marginBottom="12dp"
-        android:text="管理店长账号：添加、改绑店铺、启用/禁用、删除"
-        android:textColor="@color/ink_soft"
-        android:textSize="13sp" />
+        style="@style/Text.PageSubtitle"
+        android:text="管理店长账号：添加、改绑店铺、启用/禁用、删除" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -52,14 +41,10 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/searchBtn"
-            style="@style/Widget.Caraxes.Button.Ghost"
+            style="@style/Widget.Caraxes.Button.Ghost.Compact"
             android:layout_width="wrap_content"
             android:layout_height="40dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:minWidth="0dp"
-            android:text="搜索"
-            app:cornerRadius="10dp" />
+            android:text="搜索" />
     </LinearLayout>
 
     <TextView
@@ -84,15 +69,9 @@
 
         <TextView
             android:id="@+id/emptyText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            style="@style/Text.Empty"
             android:layout_gravity="center"
-            android:background="@drawable/bg_card"
-            android:gravity="center"
-            android:padding="28dp"
             android:text="暂无店长账号，点击下方添加"
-            android:textColor="@color/ink_soft"
-            android:textSize="14sp"
             android:visibility="gone" />
     </FrameLayout>
 
@@ -102,7 +81,5 @@
         android:layout_height="52dp"
         android:layout_marginTop="8dp"
         android:text="添加店长"
-        android:textSize="16sp"
-        app:backgroundTint="@color/pine"
-        app:cornerRadius="14dp" />
+        android:textSize="16sp" />
 </LinearLayout>

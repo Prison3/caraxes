@@ -11,26 +11,31 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:paddingHorizontal="16dp"
-        android:paddingTop="8dp"
+        android:paddingTop="12dp"
         android:paddingBottom="24dp">
 
         <TextView
+            style="@style/Text.PageTitle"
+            android:text="管理" />
+
+        <TextView
+            style="@style/Text.PageSubtitle"
+            android:text="添加、改名、删除店铺和供应商" />
+
+        <TextView
+            style="@style/Text.SectionTitle"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:fontFamily="serif"
-            android:text="店铺管理"
-            android:textColor="@color/pine"
-            android:textSize="24sp"
-            android:textStyle="bold" />
+            android:layout_weight="0"
+            android:text="店铺" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="10dp"
             android:background="@drawable/bg_card"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:padding="10dp">
+            android:padding="8dp">
 
             <EditText
                 android:id="@+id/newShopName"
@@ -55,7 +60,6 @@
                 android:insetBottom="0dp"
                 android:minWidth="0dp"
                 android:text="添加"
-                app:backgroundTint="@color/pine"
                 app:cornerRadius="10dp" />
         </LinearLayout>
 
@@ -70,27 +74,24 @@
             android:id="@+id/shopList"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="4dp"
             android:orientation="vertical" />
 
         <TextView
+            style="@style/Text.SectionTitle"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
             android:layout_marginTop="22dp"
-            android:fontFamily="serif"
-            android:text="供应商管理"
-            android:textColor="@color/pine"
-            android:textSize="24sp"
-            android:textStyle="bold" />
+            android:layout_weight="0"
+            android:text="供应商" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="10dp"
             android:background="@drawable/bg_card"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:padding="10dp">
+            android:padding="8dp">
 
             <EditText
                 android:id="@+id/newSupplierName"
@@ -115,7 +116,6 @@
                 android:insetBottom="0dp"
                 android:minWidth="0dp"
                 android:text="添加"
-                app:backgroundTint="@color/pine"
                 app:cornerRadius="10dp" />
         </LinearLayout>
 
@@ -130,7 +130,7 @@
             android:id="@+id/supplierList"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="4dp"
             android:orientation="vertical" />
 
         <LinearLayout
@@ -141,28 +141,16 @@
             android:orientation="horizontal">
 
             <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:fontFamily="serif"
-                android:text="最近删除"
-                android:textColor="@color/pine"
-                android:textSize="18sp"
-                android:textStyle="bold" />
+                style="@style/Text.SectionTitle"
+                android:text="最近删除" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/clearDeletionsBtn"
-                style="@style/Widget.Caraxes.Button.Ghost"
+                style="@style/Widget.Caraxes.Button.Ghost.Danger"
                 android:layout_width="wrap_content"
                 android:layout_height="36dp"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:minWidth="0dp"
                 android:text="清空"
-                android:textColor="@color/cinnabar"
-                android:visibility="gone"
-                app:cornerRadius="10dp"
-                app:strokeColor="@color/cinnabar" />
+                android:visibility="gone" />
         </LinearLayout>
 
         <TextView
@@ -182,14 +170,7 @@
 
         <TextView
             android:id="@+id/deletionEmpty"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/bg_card"
-            android:gravity="center"
-            android:padding="24dp"
-            android:text="暂无删除记录"
-            android:textColor="@color/ink_soft"
-            android:textSize="14sp" />
+            style="@style/Text.Empty"
+            android:text="暂无删除记录" />
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

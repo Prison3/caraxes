@@ -11,26 +11,16 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:paddingHorizontal="16dp"
-        android:paddingTop="16dp"
+        android:paddingTop="12dp"
         android:paddingBottom="24dp">
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:fontFamily="serif"
-            android:text="我的"
-            android:textColor="@color/pine"
-            android:textSize="24sp"
-            android:textStyle="bold" />
+            style="@style/Text.PageTitle"
+            android:text="我的" />
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:layout_marginBottom="16dp"
-            android:text="账号与设置"
-            android:textColor="@color/ink_soft"
-            android:textSize="13sp" />
+            style="@style/Text.PageSubtitle"
+            android:text="账号与设置" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -88,12 +78,11 @@
             android:padding="16dp">
 
             <TextView
+                style="@style/Text.SectionTitle"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="账号"
-                android:textColor="@color/pine"
+                android:layout_weight="0"
                 android:textSize="15sp"
-                android:textStyle="bold" />
+                android:text="账号" />
 
             <TextView
                 android:id="@+id/accountHint"
@@ -110,8 +99,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:text="修改登录密码"
-                app:cornerRadius="10dp" />
+                android:text="修改登录密码" />
         </LinearLayout>
 
         <LinearLayout
@@ -123,12 +111,11 @@
             android:padding="16dp">
 
             <TextView
+                style="@style/Text.SectionTitle"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="版本"
-                android:textColor="@color/pine"
+                android:layout_weight="0"
                 android:textSize="15sp"
-                android:textStyle="bold" />
+                android:text="版本" />
 
             <TextView
                 android:id="@+id/currentVersionText"
@@ -169,8 +156,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="8dp"
                     android:layout_weight="1"
-                    android:text="检查更新"
-                    app:cornerRadius="10dp" />
+                    android:text="检查更新" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/installUpdateBtn"
@@ -178,9 +164,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="立即更新"
-                    android:visibility="gone"
-                    app:backgroundTint="@color/pine"
-                    app:cornerRadius="10dp" />
+                    android:visibility="gone" />
             </LinearLayout>
         </LinearLayout>
 
@@ -192,7 +176,6 @@
             android:layout_marginTop="20dp"
             android:text="退出登录"
             android:textColor="@color/cinnabar"
-            app:cornerRadius="12dp"
             app:strokeColor="@color/cinnabar" />
     </LinearLayout>
 </ScrollView>

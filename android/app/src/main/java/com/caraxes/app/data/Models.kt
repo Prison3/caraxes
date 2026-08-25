@@ -94,6 +94,23 @@ data class ManagerOut(
     val created_at: String = "",
 )
 
+data class CostItem(
+    val id: Int = 0,
+    val name: String = "",
+    val total: Double = 0.0,
+    val count: Int = 0,
+)
+
+data class CostReportOut(
+    val group_by: String = "shop",
+    val period: String = "month",
+    val date_from: String = "",
+    val date_to: String = "",
+    val total: Double = 0.0,
+    val count: Int = 0,
+    val items: List<CostItem> = emptyList(),
+)
+
 data class DeletionOut(
     val id: Int = 0,
     val kind: String = "",

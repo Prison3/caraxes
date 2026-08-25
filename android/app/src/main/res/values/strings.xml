@@ -4,6 +4,7 @@
     <string name="nav_create">录入</string>
     <string name="nav_query">查询</string>
     <string name="nav_manage">管理</string>
+    <string name="nav_cost">成本</string>
     <string name="nav_staff">用户</string>
     <string name="nav_me">我的</string>
 </resources>

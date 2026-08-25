@@ -11,11 +11,11 @@
 
     <TextView
         style="@style/Text.PageTitle"
-        android:text="查询订单" />
+        android:text="成本" />
 
     <TextView
         style="@style/Text.PageSubtitle"
-        android:text="按日期、店铺、供应商筛选" />
+        android:text="按店铺或供应商查看日 / 月采购金额" />
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
@@ -37,123 +37,89 @@
 
                 <TextView
                     style="@style/Form.Label"
-                    android:text="店铺名" />
-
-                <com.google.android.material.chip.ChipGroup
-                    android:id="@+id/shopChips"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:singleSelection="true" />
-
-                <TextView
-                    style="@style/Form.Label"
-                    android:layout_marginTop="10dp"
-                    android:text="日期" />
+                    android:text="查看" />
 
                 <com.google.android.material.button.MaterialButtonToggleGroup
-                    android:id="@+id/dateModeGroup"
+                    android:id="@+id/groupByGroup"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:checkedButton="@id/modeDay"
+                    app:checkedButton="@id/groupShop"
                     app:selectionRequired="true"
                     app:singleSelection="true">
 
                     <com.google.android.material.button.MaterialButton
-                        android:id="@+id/modeDay"
+                        android:id="@+id/groupShop"
                         style="@style/Widget.Caraxes.ToggleButton"
                         android:layout_width="0dp"
                         android:layout_height="40dp"
                         android:layout_weight="1"
-                        android:text="单日" />
+                        android:text="按店铺" />
 
                     <com.google.android.material.button.MaterialButton
-                        android:id="@+id/modeRange"
+                        android:id="@+id/groupSupplier"
                         style="@style/Widget.Caraxes.ToggleButton"
                         android:layout_width="0dp"
                         android:layout_height="40dp"
                         android:layout_weight="1"
-                        android:text="时段" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/modeMonth"
-                        style="@style/Widget.Caraxes.ToggleButton"
-                        android:layout_width="0dp"
-                        android:layout_height="40dp"
-                        android:layout_weight="1"
-                        android:text="月份" />
+                        android:text="按供应商" />
                 </com.google.android.material.button.MaterialButtonToggleGroup>
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/dateFromLayout"
-                    style="@style/Widget.Caraxes.TextInput"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:hint="日期">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/dateFrom"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:focusable="false"
-                        android:inputType="none"
-                        android:textColor="@color/ink"
-                        android:textSize="15sp" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/dateToLayout"
-                    style="@style/Widget.Caraxes.TextInput"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:hint="结束日期"
-                    android:visibility="gone">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/dateTo"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:focusable="false"
-                        android:inputType="none"
-                        android:textColor="@color/ink"
-                        android:textSize="15sp" />
-                </com.google.android.material.textfield.TextInputLayout>
 
                 <TextView
                     style="@style/Form.Label"
                     android:layout_marginTop="12dp"
-                    android:text="供应商名" />
+                    android:text="时间" />
 
-                <com.google.android.material.chip.ChipGroup
-                    android:id="@+id/supplierChips"
+                <com.google.android.material.button.MaterialButtonToggleGroup
+                    android:id="@+id/periodGroup"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:singleSelection="true" />
+                    app:checkedButton="@id/periodMonth"
+                    app:selectionRequired="true"
+                    app:singleSelection="true">
 
-                <LinearLayout
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/periodDay"
+                        style="@style/Widget.Caraxes.ToggleButton"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:text="按日" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/periodMonth"
+                        style="@style/Widget.Caraxes.ToggleButton"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:text="按月" />
+                </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/periodValueLayout"
+                    style="@style/Widget.Caraxes.TextInput"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:hint="月份">
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/periodValue"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:focusable="false"
+                        android:inputType="none"
+                        android:textColor="@color/ink"
+                        android:textSize="15sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/queryBtn"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
                     android:layout_marginTop="14dp"
-                    android:orientation="horizontal">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/queryBtn"
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_marginEnd="8dp"
-                        android:layout_weight="1"
-                        android:text="查询" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/resetBtn"
-                        style="@style/Widget.Caraxes.Button.Ghost"
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_weight="1"
-                        android:text="重置" />
-                </LinearLayout>
+                    android:text="查询" />
 
                 <TextView
-                    android:id="@+id/queryMsg"
+                    android:id="@+id/costMsg"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
@@ -169,7 +135,7 @@
 
                 <TextView
                     style="@style/Text.SectionTitle"
-                    android:text="查询结果" />
+                    android:text="成本汇总" />
 
                 <TextView
                     android:id="@+id/listMeta"
@@ -190,7 +156,7 @@
                 android:visibility="gone" />
 
             <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/orderList"
+                android:id="@+id/costList"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
@@ -199,7 +165,7 @@
             <TextView
                 android:id="@+id/emptyHint"
                 style="@style/Text.Empty"
-                android:text="暂无订单，请调整条件后查询" />
+                android:text="暂无成本数据" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 </LinearLayout>

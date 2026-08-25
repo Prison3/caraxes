@@ -12,11 +12,9 @@ import com.caraxes.app.R
 import com.caraxes.app.data.ApiClient
 import com.caraxes.app.data.Catalog
 import com.caraxes.app.data.DeletionOut
-import com.caraxes.app.data.ManagerOut
 import com.caraxes.app.data.NameCreate
 import com.caraxes.app.data.ShopOut
 import com.caraxes.app.data.SupplierOut
-import com.caraxes.app.data.formatMoney
 import com.caraxes.app.databinding.FragmentManageBinding
 import com.caraxes.app.databinding.ItemDeletionBinding
 import com.caraxes.app.databinding.ItemManageCardBinding
@@ -25,13 +23,11 @@ import com.caraxes.app.ui.fail
 import com.caraxes.app.ui.promptPassword
 import com.caraxes.app.ui.promptRename
 import com.caraxes.app.ui.showMsg
-import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.launch
 
 class ManageFragment : Fragment() {
     private var _binding: FragmentManageBinding? = null
     private val binding get() = _binding!!
-    private var managers: List<ManagerOut> = emptyList()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentManageBinding.inflate(inflater, container, false)
@@ -58,9 +54,7 @@ class ManageFragment : Fragment() {
     private fun loadAll() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val api = ApiClient.get(requireContext())
-                Catalog.refresh(api)
-                managers = runCatching { api.listManagers() }.getOrDefault(emptyList())
+                Catalog.refresh(ApiClient.get(requireContext()))
                 renderShops()
                 renderSuppliers()
                 loadDeletions()
@@ -68,31 +62,6 @@ class ManageFragment : Fragment() {
                 showMsg(binding.shopMsg, fail(e), false)
             }
         }
-    }
-
-    private fun ghostButton(text: String, danger: Boolean = false): MaterialButton {
-        val btn = MaterialButton(requireContext(), null, com.google.android.material.R.attr.materialButtonOutlinedStyle)
-        btn.text = text
-        btn.textSize = 13f
-        btn.cornerRadius = (10 * resources.displayMetrics.density).toInt()
-        btn.insetTop = 0
-        btn.insetBottom = 0
-        btn.minHeight = (36 * resources.displayMetrics.density).toInt()
-        btn.minimumHeight = btn.minHeight
-        val lp = android.widget.LinearLayout.LayoutParams(
-            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
-            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
-        )
-        lp.marginEnd = (8 * resources.displayMetrics.density).toInt()
-        btn.layoutParams = lp
-        if (danger) {
-            val color = requireContext().getColor(R.color.cinnabar)
-            btn.setTextColor(color)
-            btn.strokeColor = android.content.res.ColorStateList.valueOf(color)
-        } else {
-            btn.setTextColor(requireContext().getColor(R.color.pine))
-        }
-        return btn
     }
 
     private fun renderShops() {
@@ -109,35 +78,11 @@ class ManageFragment : Fragment() {
     }
 
     private fun bindShopCard(card: ItemManageCardBinding, shop: ShopOut) {
-        val shopManagers = managers.filter { it.shop_id == shop.id }
         card.name.text = shop.name
-        card.managerName.text = when {
-            shopManagers.isEmpty() -> "暂无店长"
-            else -> "店长：${shopManagers.joinToString("、") { it.username }}"
-        }
-        card.managerName.setTextColor(
-            requireContext().getColor(
-                if (shopManagers.isEmpty() || shopManagers.all { it.disabled }) R.color.ink_soft else R.color.ink,
-            ),
-        )
-        card.monthTotal.text = "本月 ¥${formatMoney(shop.month_total)}"
-        card.actions.removeAllViews()
-        shopManagers.forEach { mgr ->
-            val toggle = ghostButton(if (mgr.disabled) "启用" else "禁用", danger = !mgr.disabled)
-            toggle.setOnClickListener { toggleManager(mgr) }
-            card.actions.addView(toggle)
-        }
-        val rename = ghostButton("改名")
-        rename.setOnClickListener {
+        card.renameBtn.setOnClickListener {
             promptRename("修改店铺名称", shop.name) { name -> renameShop(shop, name) }
         }
-        card.actions.addView(rename)
-        val refresh = ghostButton("刷新")
-        refresh.setOnClickListener { refreshShop(shop, card) }
-        card.actions.addView(refresh)
-        val delete = ghostButton("删除", danger = true)
-        delete.setOnClickListener { deleteShop(shop) }
-        card.actions.addView(delete)
+        card.deleteBtn.setOnClickListener { deleteShop(shop) }
     }
 
     private fun renderSuppliers() {
@@ -155,20 +100,10 @@ class ManageFragment : Fragment() {
 
     private fun bindSupplierCard(card: ItemManageCardBinding, item: SupplierOut) {
         card.name.text = item.name
-        card.managerName.isVisible = false
-        card.monthTotal.text = "本月 ¥${formatMoney(item.month_total)}"
-        card.actions.removeAllViews()
-        val rename = ghostButton("改名")
-        rename.setOnClickListener {
+        card.renameBtn.setOnClickListener {
             promptRename("修改供应商名称", item.name) { name -> renameSupplier(item, name) }
         }
-        card.actions.addView(rename)
-        val refresh = ghostButton("刷新")
-        refresh.setOnClickListener { refreshSupplier(item, card) }
-        card.actions.addView(refresh)
-        val delete = ghostButton("删除", danger = true)
-        delete.setOnClickListener { deleteSupplier(item) }
-        card.actions.addView(delete)
+        card.deleteBtn.setOnClickListener { deleteSupplier(item) }
     }
 
     private fun emptyHint(text: String): TextView {
@@ -240,56 +175,6 @@ class ManageFragment : Fragment() {
                 showMsg(binding.supplierMsg, fail(e), false)
             }
         }
-    }
-
-    private fun refreshShop(shop: ShopOut, card: ItemManageCardBinding) {
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val latest = ApiClient.get(requireContext()).getShop(shop.id)
-                Catalog.shops = Catalog.shops.map { if (it.id == latest.id) latest else it }
-                card.monthTotal.text = "本月 ¥${formatMoney(latest.month_total)}"
-                showMsg(binding.shopMsg, "本月金额已刷新", true)
-            } catch (e: Exception) {
-                showMsg(binding.shopMsg, fail(e), false)
-            }
-        }
-    }
-
-    private fun refreshSupplier(item: SupplierOut, card: ItemManageCardBinding) {
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val latest = ApiClient.get(requireContext()).getSupplier(item.id)
-                Catalog.suppliers = Catalog.suppliers.map { if (it.id == latest.id) latest else it }
-                card.monthTotal.text = "本月 ¥${formatMoney(latest.month_total)}"
-                showMsg(binding.supplierMsg, "本月金额已刷新", true)
-            } catch (e: Exception) {
-                showMsg(binding.supplierMsg, fail(e), false)
-            }
-        }
-    }
-
-    private fun toggleManager(mgr: ManagerOut) {
-        val willDisable = !mgr.disabled
-        val action = if (willDisable) "禁用" else "启用"
-        androidx.appcompat.app.AlertDialog.Builder(requireContext())
-            .setTitle("${action}店长")
-            .setMessage("确认${action}店长「${mgr.username}」？")
-            .setPositiveButton("确定$action") { _, _ ->
-                viewLifecycleOwner.lifecycleScope.launch {
-                    try {
-                        ApiClient.get(requireContext()).setManagerDisabled(
-                            mgr.id,
-                            com.caraxes.app.data.ManagerDisabledIn(willDisable),
-                        )
-                        showMsg(binding.shopMsg, "店长已$action", true)
-                        loadAll()
-                    } catch (e: Exception) {
-                        showMsg(binding.shopMsg, fail(e), false)
-                    }
-                }
-            }
-            .setNegativeButton("取消", null)
-            .show()
     }
 
     private fun deleteShop(shop: ShopOut) {
