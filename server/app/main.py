@@ -13,6 +13,7 @@ from .database import ensure_indexes
 from .deletions import router as deletions_router
 from .routers import router as orders_router
 from .seed import seed_catalog
+from .settings import router as settings_router
 from .shops import router as shops_router
 from .suppliers import router as suppliers_router
 from .users import router as users_router
@@ -54,6 +55,7 @@ app.include_router(suppliers_router, dependencies=_auth)
 app.include_router(costs_router, dependencies=_auth)
 app.include_router(deletions_router, dependencies=_auth)
 app.include_router(users_router, dependencies=_auth)
+app.include_router(settings_router)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 

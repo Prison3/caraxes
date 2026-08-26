@@ -129,4 +129,10 @@ interface ApiService {
 
     @GET("api/app/info")
     suspend fun appInfo(): AppReleaseInfo
+
+    @GET("api/settings")
+    suspend fun getSettings(): AppSettings
+
+    @PUT("api/settings")
+    suspend fun updateSettings(@Body body: AppSettingsUpdate): AppSettings
 }

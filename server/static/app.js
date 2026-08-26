@@ -126,6 +126,14 @@
   const returnAdminBtn = document.getElementById("returnAdminBtn");
   const logoutBtn = document.getElementById("logoutBtn");
   const androidAppBtn = document.getElementById("androidAppBtn");
+  const appMain = document.querySelector("main.wrap");
+  const webPauseGate = document.getElementById("webPauseGate");
+  const webPauseDownload = document.getElementById("webPauseDownload");
+  const webPauseMeta = document.getElementById("webPauseMeta");
+  const webPauseAdmin = document.getElementById("webPauseAdmin");
+  const pauseWebSwitch = document.getElementById("pauseWebSwitch");
+  const pauseWebSwitchGate = document.getElementById("pauseWebSwitchGate");
+  const pauseWebMsg = document.getElementById("pauseWebMsg");
 
   const passwordModal = document.getElementById("passwordModal");
   const passwordBackdrop = document.getElementById("passwordBackdrop");
@@ -150,6 +158,7 @@
   let suppliers = [];
   let managers = [];
   let currentUserInfo = null;
+  let pauseWeb = false;
 
   function isAdmin() {
     return !currentUserInfo || currentUserInfo.role !== "manager";
@@ -171,6 +180,63 @@
     return currentUserInfo && currentUserInfo.shop_id
       ? String(currentUserInfo.shop_id)
       : "";
+  }
+
+  function syncPauseSwitches() {
+    if (pauseWebSwitch) pauseWebSwitch.checked = pauseWeb;
+    if (pauseWebSwitchGate) pauseWebSwitchGate.checked = pauseWeb;
+  }
+
+  function applyWebPause(paused) {
+    pauseWeb = Boolean(paused);
+    document.body.classList.toggle("web-paused", pauseWeb);
+    if (appMain) appMain.hidden = pauseWeb;
+    if (webPauseGate) webPauseGate.hidden = !pauseWeb;
+    if (webPauseAdmin) webPauseAdmin.hidden = !(pauseWeb && isAdmin());
+    syncPauseSwitches();
+  }
+
+  async function loadSettings() {
+    const res = await api("/api/settings");
+    if (!res.ok) return;
+    const data = await res.json();
+    applyWebPause(Boolean(data.pause_web));
+  }
+
+  async function setPauseWeb(next) {
+    const res = await api("/api/settings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pause_web: Boolean(next) }),
+    });
+    if (!res.ok) throw new Error(await parseError(res));
+    const data = await res.json();
+    applyWebPause(Boolean(data.pause_web));
+    if (!pauseWeb) {
+      switchTab(isAdmin() ? "manage" : "create");
+      await loadCatalog();
+    }
+  }
+
+  function bindPauseSwitch(el, msgEl) {
+    if (!el) return;
+    el.addEventListener("change", async () => {
+      const next = el.checked;
+      el.disabled = true;
+      if (pauseWebSwitch) pauseWebSwitch.disabled = true;
+      if (pauseWebSwitchGate) pauseWebSwitchGate.disabled = true;
+      try {
+        await setPauseWeb(next);
+        if (msgEl) showMsg(msgEl, next ? "网页功能已暂停" : "网页功能已恢复", true);
+      } catch (err) {
+        syncPauseSwitches();
+        if (msgEl) showMsg(msgEl, err.message || "保存失败", false);
+        else showMsg(formMsg, err.message || "保存失败", false);
+      } finally {
+        if (pauseWebSwitch) pauseWebSwitch.disabled = false;
+        if (pauseWebSwitchGate) pauseWebSwitchGate.disabled = false;
+      }
+    });
   }
 
   function applyRoleUi() {
@@ -213,6 +279,7 @@
     if (!admin && panelCost && !panelCost.hidden) {
       switchTab("create");
     }
+    applyWebPause(pauseWeb);
   }
 
   function lockShopPickers() {
@@ -1737,11 +1804,15 @@
   }
 
   tabs.forEach((tab) => {
-    tab.addEventListener("click", () => switchTab(tab.dataset.tab));
+    tab.addEventListener("click", () => {
+      if (pauseWeb) return;
+      switchTab(tab.dataset.tab);
+    });
   });
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
+    if (pauseWeb) return;
     hideMsg(formMsg);
 
     if (isManager() && managerShopId()) {
@@ -2086,14 +2157,26 @@
     location.href = "/login";
   });
 
-  if (androidAppBtn) {
+  if (androidAppBtn || webPauseDownload) {
     fetch("/api/app/info", { credentials: "include" })
       .then((res) => (res.ok ? res.json() : null))
       .then((info) => {
-        if (info && info.download_url) androidAppBtn.href = info.download_url;
+        if (!info || !info.download_url) return;
+        if (androidAppBtn) androidAppBtn.href = info.download_url;
+        if (webPauseDownload) webPauseDownload.href = info.download_url;
+        if (webPauseMeta) {
+          const sizeMb = info.size_bytes ? (info.size_bytes / 1048576).toFixed(1) : "";
+          webPauseMeta.hidden = false;
+          webPauseMeta.textContent = sizeMb
+            ? `最新版本 v${info.version_name} · 约 ${sizeMb} MB`
+            : `最新版本 v${info.version_name}`;
+        }
       })
       .catch(() => {});
   }
+
+  bindPauseSwitch(pauseWebSwitch, pauseWebMsg);
+  bindPauseSwitch(pauseWebSwitchGate, pauseWebMsg);
 
   orderDate.value = todayISO();
   queryDate.value = todayISO();
@@ -2109,8 +2192,9 @@
     if (!meRes.ok) return;
     currentUserInfo = await meRes.json();
     currentUser.textContent = currentUserInfo.username;
+    await loadSettings();
     applyRoleUi();
-    // 管理员默认进管理页，店长默认进录入页
+    if (pauseWeb) return;
     switchTab(isAdmin() ? "manage" : "create");
     await loadCatalog();
   })().catch((err) => {

@@ -16,6 +16,7 @@ import com.caraxes.app.MainActivity
 import com.caraxes.app.R
 import com.caraxes.app.data.ApiClient
 import com.caraxes.app.data.AppReleaseInfo
+import com.caraxes.app.data.AppSettingsUpdate
 import com.caraxes.app.data.PasswordChangeIn
 import com.caraxes.app.data.Session
 import com.caraxes.app.databinding.DialogPasswordBinding
@@ -32,6 +33,7 @@ class MeFragment : Fragment() {
     private val binding get() = _binding!!
     private var releaseInfo: AppReleaseInfo? = null
     private var checking = false
+    private var loadingWebPause = false
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentMeBinding.inflate(inflater, container, false)
@@ -49,6 +51,9 @@ class MeFragment : Fragment() {
             (requireActivity() as MainActivity).appUpdate.promptUpdate(info)
         }
         binding.logoutBtn.setOnClickListener { confirmLogout() }
+        binding.webPauseSwitch.setOnCheckedChangeListener { _, checked ->
+            if (!loadingWebPause) saveWebPause(checked)
+        }
         checkUpdate(silent = true)
     }
 
@@ -83,6 +88,43 @@ class MeFragment : Fragment() {
             "当前账号：$name（$role）。可修改登录密码。"
         }
         binding.returnAdminBtn.isVisible = impersonating
+        loadWebPause()
+    }
+
+    private fun loadWebPause() {
+        val admin = Session.isAdmin(requireContext()) && !Session.isImpersonating(requireContext())
+        binding.webPauseCard.isVisible = admin
+        if (!admin) return
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val settings = ApiClient.get(requireContext()).getSettings()
+                loadingWebPause = true
+                binding.webPauseSwitch.isChecked = settings.pause_web
+            } catch (e: Exception) {
+                fail(e)
+            } finally {
+                loadingWebPause = false
+            }
+        }
+    }
+
+    private fun saveWebPause(paused: Boolean) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            binding.webPauseSwitch.isEnabled = false
+            try {
+                val settings = ApiClient.get(requireContext()).updateSettings(AppSettingsUpdate(pause_web = paused))
+                loadingWebPause = true
+                binding.webPauseSwitch.isChecked = settings.pause_web
+                toast(if (settings.pause_web) "网页功能已暂停" else "网页功能已恢复")
+            } catch (e: Exception) {
+                loadingWebPause = true
+                binding.webPauseSwitch.isChecked = !paused
+                toast(fail(e))
+            } finally {
+                loadingWebPause = false
+                binding.webPauseSwitch.isEnabled = true
+            }
+        }
     }
 
     private fun checkUpdate(silent: Boolean = false) {

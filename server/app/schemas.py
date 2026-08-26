@@ -143,3 +143,11 @@ class AppReleaseOut(BaseModel):
     size_bytes: int
     updated_at: str
     download_url: str
+
+
+class SettingsOut(BaseModel):
+    pause_web: bool = False
+
+
+class SettingsUpdate(BaseModel):
+    pause_web: bool = Field(..., description="是否暂停网页功能并引导下载 Android 端")

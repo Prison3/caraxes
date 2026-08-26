@@ -7,7 +7,7 @@
   <link rel="icon" type="image/png" href="/static/favicon.png" />
   <link rel="apple-touch-icon" href="/static/apple-touch-icon.png" />
   <script src="/static/device.js?v=2"></script>
-  <link rel="stylesheet" href="/static/style.css?v=20260826a" />
+  <link rel="stylesheet" href="/static/style.css?v=20260826c" />
 </head>
 <body>
   <header class="topbar">
@@ -21,6 +21,26 @@
       <button type="button" id="logoutBtn" class="logout-btn">退出</button>
     </div>
   </header>
+
+  <section id="webPauseGate" class="web-pause-gate" hidden>
+    <img class="login-icon" src="/static/app-icon.png" width="80" height="80" alt="" />
+    <h2 id="webPauseTitle">网页功能已暂停</h2>
+    <p class="web-pause-copy">请下载 Android 端 App，继续使用录入、查询和管理。</p>
+    <a id="webPauseDownload" class="web-pause-download" href="/download/caraxes.apk" download="caraxes.apk">下载 Android 端</a>
+    <p id="webPauseMeta" class="web-pause-meta" hidden></p>
+    <div id="webPauseAdmin" class="web-pause-admin card" hidden>
+      <div class="settings-row">
+        <div>
+          <strong>暂停网页功能</strong>
+          <p>关闭后恢复网页端全部功能。</p>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="pauseWebSwitchGate" />
+          <span class="switch-ui"></span>
+        </label>
+      </div>
+    </div>
+  </section>
 
   <main class="wrap">
     <nav id="mainTabs" class="tabs tabs-2" role="tablist">
@@ -163,6 +183,19 @@
 
     <section id="panelManage" class="panel tab-panel" role="tabpanel" hidden>
       <h2>管理</h2>
+      <div class="settings-card card">
+        <div class="settings-row">
+          <div>
+            <strong>暂停网页功能</strong>
+            <p>开启后，网页端仅提示下载 Android 端，录入与查询不可用。</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="pauseWebSwitch" />
+            <span class="switch-ui"></span>
+          </label>
+        </div>
+        <p id="pauseWebMsg" class="msg" hidden></p>
+      </div>
       <h3>店铺</h3>
       <form id="shopForm" class="inline-form">
         <input type="text" id="newShopName" placeholder="店铺名称" maxlength="200" required />
@@ -429,6 +462,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=20260826a"></script>
+  <script src="/static/app.js?v=20260826c"></script>
 </body>
 </html>

@@ -146,3 +146,11 @@ data class AppReleaseInfo(
     val filename: String = "",
     val updated_at: String = "",
 )
+
+data class AppSettings(
+    val pause_web: Boolean = false,
+)
+
+data class AppSettingsUpdate(
+    val pause_web: Boolean,
+)
