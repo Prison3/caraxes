@@ -1,12 +1,16 @@
 package com.caraxes.app.ui
 
 import android.app.DatePickerDialog
+import android.text.TextUtils
+import android.view.Gravity
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.NumberPicker
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.core.content.ContextCompat
+import androidx.core.view.doOnLayout
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.caraxes.app.R
@@ -43,6 +47,8 @@ fun suppliersToChoices(
     return if (allowEmpty) listOf(Choice(null, emptyLabel)) + items else items
 }
 
+private const val CHOICE_COLUMNS = 4
+
 fun ChipGroup.bindChoices(
     items: List<Choice>,
     selectedId: Int?,
@@ -59,6 +65,10 @@ fun ChipGroup.bindChoices(
         addView(empty)
         return
     }
+    val density = resources.displayMetrics.density
+    val gap = (6 * density).toInt()
+    chipSpacingHorizontal = gap
+    chipSpacingVertical = gap
     items.forEach { choice ->
         val chip = Chip(context, null, com.google.android.material.R.attr.chipStyle)
         chip.text = choice.name
@@ -66,14 +76,40 @@ fun ChipGroup.bindChoices(
         chip.tag = choice
         chip.isChecked = choice.id == selectedId || (choice.id == null && selectedId == null)
         chip.isEnabled = !locked || chip.isChecked
+        chip.minWidth = 0
+        chip.minimumWidth = 0
+        chip.setEnsureMinTouchTargetSize(false)
+        chip.ellipsize = TextUtils.TruncateAt.END
+        chip.maxLines = 1
+        chip.gravity = Gravity.CENTER
+        chip.textAlignment = View.TEXT_ALIGNMENT_CENTER
+        chip.chipStartPadding = 4 * density
+        chip.chipEndPadding = 4 * density
+        chip.textStartPadding = 2 * density
+        chip.textEndPadding = 2 * density
         addView(chip)
     }
+    doOnLayout { applyEqualColumns(CHOICE_COLUMNS) }
     setOnCheckedStateChangeListener { group, checkedIds ->
         if (locked) return@setOnCheckedStateChangeListener
         val chipId = checkedIds.firstOrNull() ?: return@setOnCheckedStateChangeListener
         val chip = group.findViewById<Chip>(chipId) ?: return@setOnCheckedStateChangeListener
         val choice = chip.tag as? Choice ?: return@setOnCheckedStateChangeListener
         onSelect(choice.id)
+    }
+}
+
+private fun ChipGroup.applyEqualColumns(columns: Int) {
+    val available = width - paddingLeft - paddingRight
+    if (available <= 0) return
+    val chipW = ((available - chipSpacingHorizontal * (columns - 1)) / columns).coerceAtLeast(1)
+    for (i in 0 until childCount) {
+        val child = getChildAt(i) as? Chip ?: continue
+        val lp = child.layoutParams
+        if (lp.width != chipW) {
+            lp.width = chipW
+            child.layoutParams = lp
+        }
     }
 }
 
@@ -100,6 +136,8 @@ fun Fragment.currentMonth(): String {
     val cal = Calendar.getInstance()
     return "%04d-%02d".format(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1)
 }
+
+fun Fragment.currentYear(): Int = Calendar.getInstance().get(Calendar.YEAR)
 
 fun Fragment.pickDate(current: String, onPicked: (String) -> Unit) {
     val parts = current.split("-")
@@ -150,6 +188,40 @@ fun Fragment.pickMonth(current: String, onPicked: (String) -> Unit) {
         .setPositiveButton("确定") { _, _ ->
             onPicked("%04d-%02d".format(yearPicker.value, monthPicker.value))
         }
+        .setNegativeButton("取消", null)
+        .show()
+}
+
+fun Fragment.pickCostTime(
+    currentYear: Int,
+    currentMonth: String,
+    onYear: (Int) -> Unit,
+    onMonth: (String) -> Unit,
+) {
+    MaterialAlertDialogBuilder(requireContext())
+        .setTitle("选择时间")
+        .setItems(arrayOf("年份（月柱状）", "月份（日柱状）")) { _, which ->
+            if (which == 0) pickYear(currentYear, onYear)
+            else pickMonth(currentMonth.ifBlank { currentMonth() }, onMonth)
+        }
+        .show()
+}
+
+fun Fragment.pickYear(current: Int, onPicked: (Int) -> Unit) {
+    val yearNow = Calendar.getInstance().get(Calendar.YEAR)
+    val picker = NumberPicker(requireContext()).apply {
+        minValue = yearNow - 8
+        maxValue = yearNow + 1
+        value = current.coerceIn(minValue, maxValue)
+    }
+    val box = android.widget.FrameLayout(requireContext()).apply {
+        setPadding(48, 24, 48, 8)
+        addView(picker)
+    }
+    MaterialAlertDialogBuilder(requireContext())
+        .setTitle("选择年份")
+        .setView(box)
+        .setPositiveButton("确定") { _, _ -> onPicked(picker.value) }
         .setNegativeButton("取消", null)
         .show()
 }

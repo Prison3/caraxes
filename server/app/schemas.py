@@ -122,6 +122,10 @@ class CostBucket(BaseModel):
     label: str
     total: float
     count: int = 0
+    open: float = 0.0
+    high: float = 0.0
+    low: float = 0.0
+    close: float = 0.0
 
 
 class CostReportOut(BaseModel):

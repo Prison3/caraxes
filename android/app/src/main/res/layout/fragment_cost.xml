@@ -9,10 +9,6 @@
     android:paddingTop="12dp"
     android:paddingBottom="12dp">
 
-    <TextView
-        style="@style/Text.PageTitle"
-        android:text="成本" />
-
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -32,38 +28,8 @@
                 android:padding="16dp">
 
                 <TextView
-                    style="@style/Form.Label"
-                    android:text="查看" />
-
-                <com.google.android.material.button.MaterialButtonToggleGroup
-                    android:id="@+id/groupByGroup"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:checkedButton="@id/groupShop"
-                    app:selectionRequired="true"
-                    app:singleSelection="true">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/groupShop"
-                        style="@style/Widget.Caraxes.ToggleButton"
-                        android:layout_width="0dp"
-                        android:layout_height="40dp"
-                        android:layout_weight="1"
-                        android:text="按店铺" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/groupSupplier"
-                        style="@style/Widget.Caraxes.ToggleButton"
-                        android:layout_width="0dp"
-                        android:layout_height="40dp"
-                        android:layout_weight="1"
-                        android:text="按供应商" />
-                </com.google.android.material.button.MaterialButtonToggleGroup>
-
-                <TextView
                     android:id="@+id/filterLabel"
                     style="@style/Form.Label"
-                    android:layout_marginTop="12dp"
                     android:text="店铺" />
 
                 <com.google.android.material.chip.ChipGroup
@@ -71,43 +37,6 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:singleSelection="true" />
-
-                <TextView
-                    style="@style/Form.Label"
-                    android:layout_marginTop="12dp"
-                    android:text="时间" />
-
-                <com.google.android.material.button.MaterialButtonToggleGroup
-                    android:id="@+id/periodGroup"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:checkedButton="@id/periodMonth"
-                    app:selectionRequired="true"
-                    app:singleSelection="true">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/periodDay"
-                        style="@style/Widget.Caraxes.ToggleButton"
-                        android:layout_width="0dp"
-                        android:layout_height="40dp"
-                        android:layout_weight="1"
-                        android:text="按日" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/periodMonth"
-                        style="@style/Widget.Caraxes.ToggleButton"
-                        android:layout_width="0dp"
-                        android:layout_height="40dp"
-                        android:layout_weight="1"
-                        android:text="按月" />
-                </com.google.android.material.button.MaterialButtonToggleGroup>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/queryBtn"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:layout_marginTop="14dp"
-                    android:text="查询" />
 
                 <TextView
                     android:id="@+id/costMsg"
@@ -136,8 +65,12 @@
                 <TextView
                     android:id="@+id/chartTitle"
                     style="@style/Text.SectionTitle"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:gravity="center"
-                    android:text="日柱状" />
+                    android:paddingVertical="6dp"
+                    android:text="月柱状" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/chartNext"
@@ -148,12 +81,47 @@
                     android:textSize="18sp" />
             </LinearLayout>
 
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/chartTypeGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:checkedButton="@id/chartTypeBar"
+                app:selectionRequired="true"
+                app:singleSelection="true">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/chartTypeBar"
+                    style="@style/Widget.Caraxes.ToggleButton"
+                    android:layout_width="0dp"
+                    android:layout_height="36dp"
+                    android:layout_weight="1"
+                    android:text="柱状" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/chartTypeKline"
+                    style="@style/Widget.Caraxes.ToggleButton"
+                    android:layout_width="0dp"
+                    android:layout_height="36dp"
+                    android:layout_weight="1"
+                    android:text="K线" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/chartTypeCalendar"
+                    style="@style/Widget.Caraxes.ToggleButton"
+                    android:layout_width="0dp"
+                    android:layout_height="36dp"
+                    android:layout_weight="1"
+                    android:text="日历" />
+            </com.google.android.material.button.MaterialButtonToggleGroup>
+
             <com.caraxes.app.ui.cost.CostBarChartView
                 android:id="@+id/chart"
                 android:layout_width="match_parent"
-                android:layout_height="200dp"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:background="@drawable/bg_card" />
+                android:background="@drawable/bg_card"
+                android:minHeight="200dp" />
 
             <LinearLayout
                 android:layout_width="match_parent"

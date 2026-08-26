@@ -71,7 +71,7 @@ object Session {
         context.getSharedPreferences(PREF, Context.MODE_PRIVATE).getString(KEY_ORIGIN_USERNAME, "") ?: ""
 
     fun homeDestination(context: Context): Int =
-        if (isAdmin(context)) R.id.manageFragment else R.id.createFragment
+        if (isAdmin(context)) R.id.costFragment else R.id.createFragment
 
     fun allowedNavIds(context: Context): Set<Int> =
         if (isAdmin(context)) {

@@ -76,15 +76,8 @@
   const managerEmpty = document.getElementById("managerEmpty");
 
   const costForm = document.getElementById("costForm");
-  const costGroupRow = document.getElementById("costGroupRow");
-  const costPeriodRow = document.getElementById("costPeriodRow");
-  const costShopField = document.getElementById("costShopField");
-  const costSupplierField = document.getElementById("costSupplierField");
   const costShopId = document.getElementById("costShopId");
-  const costSupplierId = document.getElementById("costSupplierId");
   const costShopPicker = document.getElementById("costShopPicker");
-  const costSupplierPicker = document.getElementById("costSupplierPicker");
-  const costBtn = document.getElementById("costBtn");
   const costMsg = document.getElementById("costMsg");
   const costListMeta = document.getElementById("costListMeta");
   const costSumMeta = document.getElementById("costSumMeta");
@@ -98,8 +91,16 @@
   const costChart = document.getElementById("costChart");
   const costChartPrev = document.getElementById("costChartPrev");
   const costChartNext = document.getElementById("costChartNext");
-  let costGroupBy = "shop";
-  let costPeriod = "month";
+  const costTimeModal = document.getElementById("costTimeModal");
+  const costTimeBackdrop = document.getElementById("costTimeBackdrop");
+  const costTimeYearInput = document.getElementById("costTimeYearInput");
+  const costTimeMonthInput = document.getElementById("costTimeMonthInput");
+  const costTimeUseYear = document.getElementById("costTimeUseYear");
+  const costTimeUseMonth = document.getElementById("costTimeUseMonth");
+  const costChartTypeRow = document.getElementById("costChartTypeRow");
+  let costPeriod = "day";
+  let costChartKind = "bar";
+  let costSelectedYear = new Date().getFullYear();
   let costSelectedDay = "";
   let costSelectedMonth = "";
   let lastCostReport = null;
@@ -207,7 +208,7 @@
     const data = await res.json();
     applyWebPause(Boolean(data.pause_web));
     if (!pauseWeb) {
-      switchTab(isAdmin() ? "manage" : "create");
+      switchTab(isAdmin() ? "cost" : "create");
       await loadCatalog();
     }
   }
@@ -262,7 +263,7 @@
     document.body.classList.toggle("role-manager", isManager());
     document.body.classList.toggle("role-admin", isAdmin());
     if (admin && panelCreate && !panelCreate.hidden) {
-      switchTab("manage");
+      switchTab("cost");
     }
     if (!admin && panelManage && !panelManage.hidden) {
       switchTab("create");
@@ -1098,20 +1099,69 @@
     return todayISO().slice(0, 7);
   }
 
+  function currentYearValue() {
+    return new Date().getFullYear();
+  }
+
   function applyCostPeriodUi() {
-    const byShop = costGroupBy === "shop";
-    if (costShopField) costShopField.hidden = !byShop;
-    if (costSupplierField) costSupplierField.hidden = byShop;
-    if (costPeriodRow) {
-      costPeriodRow.querySelectorAll(".mode-btn").forEach((btn) => {
-        btn.classList.toggle("active", btn.dataset.costPeriod === costPeriod);
-      });
+    updateCostChartTitle();
+  }
+
+  function updateCostChartTitle() {
+    if (!costChartTitle) return;
+    if (costPeriod === "month") {
+      const year = costSelectedYear || currentYearValue();
+      costChartTitle.textContent = `${year}年 ▾`;
+    } else {
+      const parts = String(costSelectedMonth || costSelectedDay || currentMonthISO()).split("-");
+      costChartTitle.textContent = parts.length >= 2
+        ? `${parts[0]}年${Number(parts[1])}月 ▾`
+        : "选择时间 ▾";
     }
-    if (costGroupRow) {
-      costGroupRow.querySelectorAll(".mode-btn").forEach((btn) => {
-        btn.classList.toggle("active", btn.dataset.costGroup === costGroupBy);
-      });
+  }
+
+  function applyCostChartTypeUi() {
+    if (!costChartTypeRow) return;
+    costChartTypeRow.querySelectorAll(".mode-btn").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.chart === costChartKind);
+    });
+  }
+
+  function closeCostTimeModal() {
+    if (costTimeModal) costTimeModal.hidden = true;
+  }
+
+  function openCostTimeModal() {
+    if (!costTimeModal) return;
+    if (costTimeYearInput) {
+      costTimeYearInput.value = String(costSelectedYear || currentYearValue());
     }
+    if (costTimeMonthInput) {
+      costTimeMonthInput.value = costSelectedMonth || costSelectedDay.slice(0, 7) || currentMonthISO();
+    }
+    costTimeModal.hidden = false;
+  }
+
+  function applyCostYear(year) {
+    const parsed = Number(year);
+    if (!Number.isFinite(parsed) || parsed < 2000 || parsed > 2100) return;
+    costPeriod = "month";
+    costSelectedYear = parsed;
+    costSelectedMonth = "";
+    closeCostTimeModal();
+    loadCosts();
+  }
+
+  function applyCostMonth(monthValue) {
+    const month = String(monthValue || "").slice(0, 7);
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return;
+    costPeriod = "day";
+    costSelectedMonth = month;
+    costSelectedYear = Number(month.slice(0, 4));
+    const today = todayISO();
+    costSelectedDay = today.startsWith(month) ? today : `${month}-01`;
+    closeCostTimeModal();
+    loadCosts();
   }
 
   function renderCostPickers() {
@@ -1124,29 +1174,19 @@
         onChange: () => loadCosts(),
       });
     }
-    if (costSupplierPicker && costSupplierId) {
-      renderChipPicker(costSupplierPicker, costSupplierId, suppliers, {
-        allowEmpty: true,
-        emptyLabel: "全部供应商",
-        keepValue: true,
-        valueKey: "id",
-        onChange: () => loadCosts(),
-      });
-    }
   }
 
   function shiftCostPeriod(delta) {
     if (costPeriod === "month") {
-      const parts = (costSelectedMonth || currentMonthISO()).split("-");
-      const year = Number(parts[0] || 0) + delta;
-      const month = Number(parts[1] || 1);
-      costSelectedMonth = `${year}-${pad2(month)}`;
+      costSelectedYear = (costSelectedYear || currentYearValue()) + delta;
+      costSelectedMonth = "";
     } else {
       const parts = (costSelectedDay || todayISO()).split("-").map(Number);
       const d = new Date(parts[0], (parts[1] || 1) - 1, parts[2] || 1);
       d.setMonth(d.getMonth() + delta);
       costSelectedDay = `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
       costSelectedMonth = costSelectedDay.slice(0, 7);
+      costSelectedYear = d.getFullYear();
     }
     loadCosts();
   }
@@ -1155,33 +1195,34 @@
     if (!isAdmin() || !costList) return;
     hideMsg(costMsg);
     const params = new URLSearchParams();
-    params.set("group_by", costGroupBy);
+    params.set("group_by", "shop");
     params.set("period", costPeriod);
     if (costPeriod === "month") {
-      params.set("month", costSelectedMonth || currentMonthISO());
+      const year = costSelectedYear || currentYearValue();
+      params.set("year", String(year));
+      if (costSelectedMonth && costSelectedMonth.startsWith(String(year))) {
+        params.set("month", costSelectedMonth);
+      }
     } else {
       params.set("order_date", costSelectedDay || todayISO());
     }
-    if (costGroupBy === "shop" && costShopId?.value) params.set("shop_id", costShopId.value);
-    if (costGroupBy === "supplier" && costSupplierId?.value) params.set("supplier_id", costSupplierId.value);
-    if (costBtn) costBtn.disabled = true;
+    params.set("chart", costChartKind || "bar");
+    if (costShopId?.value) params.set("shop_id", costShopId.value);
     if (costListMeta) costListMeta.textContent = "加载中…";
     try {
       const res = await api(`/api/costs?${params.toString()}`);
       if (!res.ok) throw new Error(await parseError(res));
       renderCostReport(await res.json());
     } catch (err) {
-      renderCostReport({ items: [], total: 0, count: 0, group_by: costGroupBy });
+      renderCostReport({ items: [], total: 0, count: 0, group_by: "shop" });
       showMsg(costMsg, err.message || "查询失败", false);
-    } finally {
-      if (costBtn) costBtn.disabled = false;
     }
   }
 
   function renderCostReport(report) {
     lastCostReport = report;
     const items = report.items || [];
-    const kind = report.group_by === "supplier" ? "供应商" : "店铺";
+    const kind = "店铺";
     if (costNameHead) costNameHead.textContent = kind;
     if (costList) costList.innerHTML = "";
     if (costTableWrap) costTableWrap.hidden = items.length === 0;
@@ -1213,32 +1254,50 @@
     renderCostChart(report);
   }
 
-  function renderCostChart(report) {
-    const buckets = report.buckets || [];
-    const selected = report.selected || (costPeriod === "month" ? costSelectedMonth : costSelectedDay) || "";
-    if (costPeriod === "month" && selected.length >= 7) costSelectedMonth = selected.slice(0, 7);
-    if (costPeriod === "day" && selected.length >= 10) {
-      costSelectedDay = selected.slice(0, 10);
-      costSelectedMonth = selected.slice(0, 7);
+  function selectCostBucket(bucket, selected) {
+    if (!bucket?.key || bucket.key === selected) return;
+    if (costChartKind === "calendar" && costPeriod === "month" && bucket.key.length >= 10) {
+      costPeriod = "day";
+      costSelectedDay = bucket.key.slice(0, 10);
+      costSelectedMonth = bucket.key.slice(0, 7);
+      costSelectedYear = Number(bucket.key.slice(0, 4)) || costSelectedYear;
+      loadCosts();
+      return;
     }
     if (costPeriod === "month") {
-      const year = String(selected || "").slice(0, 4);
-      if (costChartTitle) costChartTitle.textContent = year ? `月柱状 · ${year}年` : "月柱状";
+      costSelectedMonth = bucket.key;
     } else {
-      const parts = String(selected || "").split("-");
-      if (costChartTitle) {
-        costChartTitle.textContent = parts.length >= 2
-          ? `日柱状 · ${parts[0]}年${Number(parts[1])}月`
-          : "日柱状";
-      }
+      costSelectedDay = bucket.key;
+      costSelectedMonth = bucket.key.slice(0, 7);
     }
-    if (costChartMeta) costChartMeta.textContent = buckets.length ? "点击柱子切换" : "";
-    if (costChartCard) costChartCard.hidden = buckets.length === 0;
-    if (!costChart) return;
-    costChart.innerHTML = "";
-    if (!buckets.length) return;
+    loadCosts();
+  }
 
-    const width = Math.max(costChart.clientWidth || 0, 320);
+  function svgEl(name, attrs) {
+    const node = document.createElementNS("http://www.w3.org/2000/svg", name);
+    Object.entries(attrs || {}).forEach(([key, value]) => node.setAttribute(key, String(value)));
+    return node;
+  }
+
+  function bindCostMark(node, bucket, selected) {
+    node.setAttribute("tabindex", "0");
+    node.setAttribute("role", "button");
+    const total = Number(bucket.total) || 0;
+    node.setAttribute("aria-label", `${bucket.label} ¥${formatMoney(total)}`);
+    const title = svgEl("title");
+    title.textContent = `${bucket.label}  ¥${formatMoney(total)}  ·  ${bucket.count || 0} 笔`;
+    node.appendChild(title);
+    const run = () => selectCostBucket(bucket, selected);
+    node.addEventListener("click", run);
+    node.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter" || ev.key === " ") {
+        ev.preventDefault();
+        run();
+      }
+    });
+  }
+
+  function renderCostBars(buckets, selected, width) {
     const height = 200;
     const padT = 22;
     const padB = 28;
@@ -1251,76 +1310,231 @@
     const barW = Math.max(2, (innerW - gap * (n + 1)) / n);
     const maxVal = Math.max(0.01, ...buckets.map((b) => Number(b.total) || 0));
     const dense = n > 16;
-    const ns = "http://www.w3.org/2000/svg";
-    const svg = document.createElementNS(ns, "svg");
-    svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
-    svg.setAttribute("width", "100%");
-    svg.setAttribute("height", String(height));
-    const axis = document.createElementNS(ns, "line");
-    axis.setAttribute("x1", String(padL));
-    axis.setAttribute("x2", String(width - padR));
-    axis.setAttribute("y1", String(height - padB));
-    axis.setAttribute("y2", String(height - padB));
-    axis.setAttribute("class", "cost-chart-axis");
-    svg.appendChild(axis);
-
+    const svg = svgEl("svg", { viewBox: `0 0 ${width} ${height}`, width: "100%", height: String(height) });
+    svg.appendChild(svgEl("line", {
+      x1: padL, x2: width - padR, y1: height - padB, y2: height - padB, class: "cost-chart-axis",
+    }));
     buckets.forEach((bucket, i) => {
       const total = Number(bucket.total) || 0;
       const left = padL + gap + i * (barW + gap);
       const h = (total / maxVal) * innerH;
       const top = height - padB - (total > 0 ? Math.max(2, h) : 0);
       const isSel = bucket.key === selected;
-      const rect = document.createElementNS(ns, "rect");
-      rect.setAttribute("x", String(left));
-      rect.setAttribute("y", String(top));
-      rect.setAttribute("width", String(barW));
-      rect.setAttribute("height", String(Math.max(0, height - padB - top)));
-      rect.setAttribute("rx", "3");
-      rect.setAttribute("class", isSel ? "cost-bar is-selected" : (total > 0 ? "cost-bar" : "cost-bar is-empty"));
-      rect.setAttribute("tabindex", "0");
-      rect.setAttribute("role", "button");
-      rect.setAttribute("aria-label", `${bucket.label} ¥${formatMoney(total)}`);
-      const title = document.createElementNS(ns, "title");
-      title.textContent = `${bucket.label}  ¥${formatMoney(total)}  ·  ${bucket.count || 0} 笔`;
-      rect.appendChild(title);
-      const selectBar = () => {
-        if (!bucket.key || bucket.key === selected) return;
-        if (costPeriod === "month") {
-          costSelectedMonth = bucket.key;
-        } else {
-          costSelectedDay = bucket.key;
-          costSelectedMonth = bucket.key.slice(0, 7);
-        }
-        loadCosts();
-      };
-      rect.addEventListener("click", selectBar);
-      rect.addEventListener("keydown", (ev) => {
-        if (ev.key === "Enter" || ev.key === " ") {
-          ev.preventDefault();
-          selectBar();
-        }
+      const rect = svgEl("rect", {
+        x: left,
+        y: top,
+        width: barW,
+        height: Math.max(0, height - padB - top),
+        rx: 3,
+        class: isSel ? "cost-bar is-selected" : (total > 0 ? "cost-bar" : "cost-bar is-empty"),
       });
+      bindCostMark(rect, bucket, selected);
       svg.appendChild(rect);
-
       const showLabel = !dense || i === 0 || i === n - 1 || (i + 1) % 5 === 0 || isSel;
       if (showLabel) {
-        const text = document.createElementNS(ns, "text");
-        text.setAttribute("x", String(left + barW / 2));
-        text.setAttribute("y", String(height - 10));
-        text.setAttribute("class", "cost-chart-label");
+        const text = svgEl("text", { x: left + barW / 2, y: height - 10, class: "cost-chart-label" });
         text.textContent = String(bucket.label || "").replace(/日$|月$/, "");
         svg.appendChild(text);
       }
       if (isSel && total > 0) {
-        const value = document.createElementNS(ns, "text");
-        value.setAttribute("x", String(left + barW / 2));
-        value.setAttribute("y", String(top - 6));
-        value.setAttribute("class", "cost-chart-value");
+        const value = svgEl("text", { x: left + barW / 2, y: top - 6, class: "cost-chart-value" });
         value.textContent = String(Math.round(total));
         svg.appendChild(value);
       }
     });
     costChart.appendChild(svg);
+  }
+
+  function renderCostKline(buckets, selected, width) {
+    const height = 200;
+    const padT = 22;
+    const padB = 28;
+    const padL = 6;
+    const padR = 6;
+    const innerW = width - padL - padR;
+    const innerH = height - padT - padB;
+    const n = buckets.length;
+    const gap = Math.min(6, innerW / n * 0.2);
+    const slotW = Math.max(3, (innerW - gap * (n + 1)) / n);
+    const maxVal = Math.max(0.01, ...buckets.map((b) => Math.max(
+      Number(b.high) || 0,
+      Number(b.total) || 0,
+      Number(b.open) || 0,
+      Number(b.close) || 0,
+      Number(b.low) || 0,
+    )));
+    const dense = n > 16;
+    const yOf = (value) => height - padB - (Number(value) / maxVal) * innerH;
+    const svg = svgEl("svg", { viewBox: `0 0 ${width} ${height}`, width: "100%", height: String(height) });
+    svg.appendChild(svgEl("line", {
+      x1: padL, x2: width - padR, y1: height - padB, y2: height - padB, class: "cost-chart-axis",
+    }));
+    buckets.forEach((bucket, i) => {
+      const left = padL + gap + i * (slotW + gap);
+      const cx = left + slotW / 2;
+      const high = Math.max(Number(bucket.high) || 0, Number(bucket.total) || 0, Number(bucket.open) || 0, Number(bucket.close) || 0);
+      const open = Number(bucket.open) || Number(bucket.total) || 0;
+      const close = Number(bucket.close) || Number(bucket.total) || 0;
+      const low = Number(bucket.low) > 0 ? Number(bucket.low) : Math.min(open, close, Number(bucket.total) || 0);
+      const up = close >= open;
+      const cls = high <= 0 ? "cost-kline-empty" : (up ? "cost-kline-up" : "cost-kline-down");
+      const hit = svgEl("rect", {
+        x: left, y: padT, width: slotW, height: innerH, fill: "transparent",
+      });
+      bindCostMark(hit, bucket, selected);
+      svg.appendChild(hit);
+      if (high <= 0) {
+        svg.appendChild(svgEl("line", {
+          x1: left + 2, x2: left + slotW - 2, y1: height - padB, y2: height - padB, class: "cost-chart-axis",
+        }));
+      } else {
+        svg.appendChild(svgEl("line", {
+          x1: cx, x2: cx, y1: yOf(high), y2: yOf(low), class: cls, "stroke-width": 1.5,
+        }));
+        const bodyW = Math.max(3, slotW * 0.55);
+        const yOpen = yOf(open);
+        const yClose = yOf(close);
+        const top = Math.min(yOpen, yClose);
+        const bodyH = Math.max(2, Math.abs(yClose - yOpen));
+        const body = svgEl("rect", {
+          x: cx - bodyW / 2, y: top, width: bodyW, height: bodyH, rx: 2, class: cls,
+        });
+        svg.appendChild(body);
+      }
+      const isSel = bucket.key === selected;
+      const showLabel = !dense || i === 0 || i === n - 1 || (i + 1) % 5 === 0 || isSel;
+      if (showLabel) {
+        const text = svgEl("text", { x: cx, y: height - 10, class: "cost-chart-label" });
+        text.textContent = String(bucket.label || "").replace(/日$|月$/, "");
+        svg.appendChild(text);
+      }
+    });
+    costChart.appendChild(svg);
+  }
+
+  function compactCost(total) {
+    if (!(Number(total) > 0)) return "";
+    if (total >= 10000) {
+      const wan = total / 10000;
+      return `${wan >= 10 ? Math.round(wan) : wan.toFixed(1).replace(/\.0$/, "")}万`;
+    }
+    return String(Math.round(total));
+  }
+
+  function paintCalCell(btn, bucket, selected) {
+    const total = Number(bucket.total) || 0;
+    btn.type = "button";
+    btn.className = "cost-cal-cell";
+    if (total <= 0) btn.classList.add("is-empty");
+    if (bucket.key === selected || (selected.length === 7 && bucket.key.startsWith(selected))) {
+      btn.classList.add("is-selected");
+    }
+    const amount = document.createElement("span");
+    amount.className = "cost-cal-amount";
+    amount.textContent = compactCost(total) || " ";
+    const day = document.createElement("span");
+    day.className = "cost-cal-day";
+    day.textContent = String(Number(String(bucket.key).slice(-2)));
+    btn.appendChild(amount);
+    btn.appendChild(day);
+    btn.title = `${bucket.label}  ¥${formatMoney(total)}`;
+    btn.addEventListener("click", () => selectCostBucket(bucket, selected));
+    return btn;
+  }
+
+  function weekdayOffset(isoDay) {
+    const parts = String(isoDay).split("-").map(Number);
+    const d = new Date(parts[0], (parts[1] || 1) - 1, parts[2] || 1);
+    return d.getDay();
+  }
+
+  function renderCostMonthCalendar(buckets, selected) {
+    const wrap = document.createElement("div");
+    wrap.className = "cost-cal";
+    const head = document.createElement("div");
+    head.className = "cost-cal-weekdays";
+    ["日", "一", "二", "三", "四", "五", "六"].forEach((name) => {
+      const span = document.createElement("span");
+      span.textContent = name;
+      head.appendChild(span);
+    });
+    wrap.appendChild(head);
+    const grid = document.createElement("div");
+    grid.className = "cost-cal-grid";
+    const offset = weekdayOffset(buckets[0]?.key);
+    for (let i = 0; i < offset; i += 1) {
+      const pad = document.createElement("span");
+      grid.appendChild(pad);
+    }
+    buckets.forEach((bucket) => {
+      grid.appendChild(paintCalCell(document.createElement("button"), bucket, selected));
+    });
+    wrap.appendChild(grid);
+    costChart.appendChild(wrap);
+  }
+
+  function renderCostYearCalendar(buckets, selected) {
+    const wrap = document.createElement("div");
+    wrap.className = "cost-cal-year";
+    const byMonth = new Map();
+    buckets.forEach((bucket) => {
+      const key = String(bucket.key).slice(0, 7);
+      if (!byMonth.has(key)) byMonth.set(key, []);
+      byMonth.get(key).push(bucket);
+    });
+    for (let mon = 1; mon <= 12; mon += 1) {
+      const monthKey = `${String(buckets[0]?.key || "").slice(0, 4)}-${pad2(mon)}`;
+      const days = byMonth.get(monthKey) || [];
+      const monthEl = document.createElement("div");
+      monthEl.className = "cost-cal-month";
+      const title = document.createElement("h4");
+      title.textContent = `${mon}月`;
+      monthEl.appendChild(title);
+      const grid = document.createElement("div");
+      grid.className = "cost-cal-grid";
+      const offset = days.length ? weekdayOffset(days[0].key) : 0;
+      for (let i = 0; i < offset; i += 1) grid.appendChild(document.createElement("span"));
+      days.forEach((bucket) => {
+        grid.appendChild(paintCalCell(document.createElement("button"), bucket, selected));
+      });
+      monthEl.appendChild(grid);
+      wrap.appendChild(monthEl);
+    }
+    costChart.appendChild(wrap);
+  }
+
+  function renderCostChart(report) {
+    const buckets = report.buckets || [];
+    const selected = report.selected || (costPeriod === "month"
+      ? (costSelectedMonth || String(costSelectedYear || ""))
+      : costSelectedDay) || "";
+    if (costPeriod === "month") {
+      if (selected.length >= 4) costSelectedYear = Number(selected.slice(0, 4)) || costSelectedYear;
+      costSelectedMonth = selected.length >= 7 ? selected.slice(0, 7) : "";
+    }
+    if (costPeriod === "day" && selected.length >= 10) {
+      costSelectedDay = selected.slice(0, 10);
+      costSelectedMonth = selected.slice(0, 7);
+      costSelectedYear = Number(selected.slice(0, 4)) || costSelectedYear;
+    }
+    updateCostChartTitle();
+    applyCostChartTypeUi();
+    if (costChartMeta) costChartMeta.textContent = buckets.length ? "点击切换" : "";
+    if (costChartCard) costChartCard.hidden = buckets.length === 0;
+    if (!costChart) return;
+    costChart.innerHTML = "";
+    if (!buckets.length) return;
+    if (costChartKind === "calendar") {
+      if (buckets.length > 40) renderCostYearCalendar(buckets, selected);
+      else renderCostMonthCalendar(buckets, selected);
+      return;
+    }
+    const width = Math.max(costChart.clientWidth || 0, 320);
+    if (costChartKind === "kline") {
+      renderCostKline(buckets, selected, width);
+      return;
+    }
+    renderCostBars(buckets, selected, width);
   }
 
   function canEditOrders() {
@@ -1831,26 +2045,34 @@
       await loadCosts();
     });
   }
-  if (costGroupRow) {
-    costGroupRow.querySelectorAll(".mode-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        costGroupBy = btn.dataset.costGroup || "shop";
-        applyCostPeriodUi();
-        loadCosts();
-      });
+  if (costChartTitle) costChartTitle.addEventListener("click", openCostTimeModal);
+  if (costTimeBackdrop) costTimeBackdrop.addEventListener("click", closeCostTimeModal);
+  const costTimeForm = document.getElementById("costTimeForm");
+  if (costTimeForm) {
+    costTimeForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      applyCostYear(costTimeYearInput?.value);
     });
   }
-  if (costPeriodRow) {
-    costPeriodRow.querySelectorAll(".mode-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        costPeriod = btn.dataset.costPeriod || "month";
-        applyCostPeriodUi();
-        loadCosts();
-      });
-    });
+  if (costTimeUseYear) {
+    costTimeUseYear.addEventListener("click", () => applyCostYear(costTimeYearInput?.value));
+  }
+  if (costTimeUseMonth) {
+    costTimeUseMonth.addEventListener("click", () => applyCostMonth(costTimeMonthInput?.value));
   }
   if (costChartPrev) costChartPrev.addEventListener("click", () => shiftCostPeriod(-1));
   if (costChartNext) costChartNext.addEventListener("click", () => shiftCostPeriod(1));
+  if (costChartTypeRow) {
+    costChartTypeRow.querySelectorAll(".mode-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const next = btn.dataset.chart || "bar";
+        if (next === costChartKind) return;
+        costChartKind = next;
+        applyCostChartTypeUi();
+        loadCosts();
+      });
+    });
+  }
 
   supplierForm.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -2098,7 +2320,9 @@
   queryDate.value = todayISO();
   costSelectedDay = todayISO();
   costSelectedMonth = currentMonthISO();
+  costSelectedYear = currentYearValue();
   applyCostPeriodUi();
+  applyCostChartTypeUi();
   window.addEventListener("resize", () => {
     if (lastCostReport && panelCost && !panelCost.hidden) renderCostChart(lastCostReport);
   });
@@ -2111,7 +2335,7 @@
     await loadSettings();
     applyRoleUi();
     if (pauseWeb) return;
-    switchTab(isAdmin() ? "manage" : "create");
+    switchTab(isAdmin() ? "cost" : "create");
     await loadCatalog();
   })().catch((err) => {
     if (err.message !== "未登录") {

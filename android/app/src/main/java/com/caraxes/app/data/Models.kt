@@ -108,6 +108,10 @@ data class CostBucket(
     val label: String = "",
     val total: Double = 0.0,
     val count: Int = 0,
+    val open: Double = 0.0,
+    val high: Double = 0.0,
+    val low: Double = 0.0,
+    val close: Double = 0.0,
 )
 
 data class CostReportOut(

@@ -7,7 +7,7 @@
   <link rel="icon" type="image/png" href="/static/favicon.png" />
   <link rel="apple-touch-icon" href="/static/apple-touch-icon.png" />
   <script src="/static/device.js?v=2"></script>
-  <link rel="stylesheet" href="/static/style.css?v=20260826d" />
+  <link rel="stylesheet" href="/static/style.css?v=20260827a" />
 </head>
 <body>
   <header class="topbar">
@@ -236,43 +236,25 @@
     </section>
 
     <section id="panelCost" class="panel tab-panel" role="tabpanel" hidden>
-      <h2>成本</h2>
       <form id="costForm" class="query-form card">
-        <div class="choice-field">
-          <span class="choice-label">查看</span>
-          <div id="costGroupRow" class="mode-row" role="tablist" aria-label="按店铺或供应商">
-            <button type="button" class="mode-btn active" data-cost-group="shop">按店铺</button>
-            <button type="button" class="mode-btn" data-cost-group="supplier">按供应商</button>
-          </div>
-        </div>
         <div id="costShopField" class="choice-field">
           <span class="choice-label">店铺</span>
           <input type="hidden" id="costShopId" value="" />
           <div id="costShopPicker" class="chip-grid" role="listbox" aria-label="选择店铺"></div>
-        </div>
-        <div id="costSupplierField" class="choice-field" hidden>
-          <span class="choice-label">供应商</span>
-          <input type="hidden" id="costSupplierId" value="" />
-          <div id="costSupplierPicker" class="chip-grid" role="listbox" aria-label="选择供应商"></div>
-        </div>
-        <div class="choice-field">
-          <span class="choice-label">时间</span>
-          <div id="costPeriodRow" class="mode-row" role="tablist" aria-label="按日或按月">
-            <button type="button" class="mode-btn" data-cost-period="day">按日</button>
-            <button type="button" class="mode-btn active" data-cost-period="month">按月</button>
-          </div>
-        </div>
-        <div class="query-actions">
-          <button type="submit" id="costBtn">查询</button>
         </div>
       </form>
       <p id="costMsg" class="msg" hidden></p>
       <div class="orders-readable query-results">
         <div class="list-head cost-chart-head">
           <button type="button" id="costChartPrev" class="cost-chart-nav" aria-label="上一段">‹</button>
-          <h3 id="costChartTitle">日柱状</h3>
+          <button type="button" id="costChartTitle" class="cost-chart-title" aria-haspopup="dialog">选择时间</button>
           <button type="button" id="costChartNext" class="cost-chart-nav" aria-label="下一段">›</button>
           <span id="costChartMeta" class="meta"></span>
+        </div>
+        <div id="costChartTypeRow" class="mode-row cols-3" role="tablist" aria-label="图表类型">
+          <button type="button" class="mode-btn active" data-chart="bar">柱状</button>
+          <button type="button" class="mode-btn" data-chart="kline">K线</button>
+          <button type="button" class="mode-btn" data-chart="calendar">日历</button>
         </div>
         <div id="costChartCard" class="cost-chart-card" hidden>
           <div id="costChart" class="cost-chart" role="img" aria-label="成本柱状图"></div>
@@ -349,6 +331,27 @@
         <button type="button" id="dupYes">是</button>
         <button type="button" id="dupNo" class="btn-secondary">否</button>
       </div>
+    </div>
+  </div>
+
+  <div id="costTimeModal" class="modal" hidden>
+    <div class="modal-backdrop" id="costTimeBackdrop"></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="costTimeTitle">
+      <h3 id="costTimeTitle">选择时间</h3>
+      <form id="costTimeForm" class="cost-time-form">
+        <label>
+          年份
+          <input type="number" id="costTimeYearInput" min="2000" max="2100" step="1" required />
+        </label>
+        <label>
+          月份
+          <input type="month" id="costTimeMonthInput" required />
+        </label>
+        <div class="modal-actions">
+          <button type="button" id="costTimeUseYear">查看这一年</button>
+          <button type="button" id="costTimeUseMonth" class="btn-secondary">查看这一月</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -438,6 +441,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=20260826d"></script>
+  <script src="/static/app.js?v=20260827a"></script>
 </body>
 </html>

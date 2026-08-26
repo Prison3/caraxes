@@ -768,6 +768,35 @@ html.is-pc .login-shell {
   grid-template-columns: 1fr;
 }
 
+.cost-time-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.cost-time-form label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.cost-time-form input {
+  min-height: 44px;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: var(--fs-input);
+}
+
+.cost-time-form .modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
 .section-gap {
   margin-top: 1.75rem !important;
 }
@@ -779,6 +808,10 @@ html.is-pc .login-shell {
   padding: 0.25rem;
   border-radius: 9px;
   background: rgba(27, 77, 62, 0.06);
+}
+
+.mode-row.cols-3 {
+  grid-template-columns: 1fr 1fr 1fr;
 }
 
 .mode-btn {
@@ -987,17 +1020,17 @@ html.is-pc .login-shell {
 
 .chip-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.45rem;
 }
 
 html.is-pc .chip-grid {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .chip {
   min-height: 40px;
-  padding: 0.45rem 0.55rem;
+  padding: 0.4rem 0.32rem;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--paper2);
@@ -1077,7 +1110,7 @@ html.is-pc .chip-grid {
 }
 
 html.is-mobile .chip-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 html.is-pc .manage-grid {
@@ -1687,10 +1720,31 @@ html.is-mobile .manager-actions {
   gap: 0.45rem;
 }
 
-.cost-chart-head h3 {
+#costChartTypeRow {
+  margin-top: 0.55rem;
+}
+
+.cost-chart-head h3,
+.cost-chart-title {
   flex: 1;
   text-align: center;
   margin: 0;
+}
+
+.cost-chart-title {
+  padding: 0.35rem 0.4rem;
+  border: 0;
+  background: transparent;
+  color: var(--forest);
+  font-family: var(--font-serif);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  line-height: 1.3;
+  cursor: pointer;
+}
+
+.cost-chart-title:hover {
+  opacity: 0.82;
 }
 
 .cost-chart-nav {
@@ -1734,7 +1788,114 @@ html.is-mobile .manager-actions {
 .cost-chart svg {
   display: block;
   width: 100%;
-  height: 200px;
+  height: auto;
+}
+
+.cost-kline-up {
+  fill: var(--danger);
+  stroke: var(--danger);
+}
+
+.cost-kline-down {
+  fill: var(--forest);
+  stroke: var(--forest);
+}
+
+.cost-kline-empty {
+  stroke: var(--line);
+}
+
+.cost-cal {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.cost-cal-weekdays,
+.cost-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.2rem;
+}
+
+.cost-cal-weekdays span {
+  text-align: center;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.cost-cal-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.08rem;
+  min-height: 48px;
+  padding: 0.22rem 0.08rem;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.cost-cal-amount {
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.1;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--danger);
+}
+
+.cost-cal-day {
+  font-size: 11px;
+  line-height: 1.1;
+}
+
+.cost-cal-cell.is-empty {
+  background: #fff;
+  color: var(--muted);
+  cursor: default;
+}
+
+.cost-cal-cell.is-selected {
+  outline: 2px solid var(--gold);
+  outline-offset: -1px;
+}
+
+.cost-cal-year {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem 0.45rem;
+}
+
+.cost-cal-month h4 {
+  margin: 0 0 0.25rem;
+  color: var(--forest);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.cost-cal-year .cost-cal-grid {
+  gap: 2px;
+}
+
+.cost-cal-year .cost-cal-cell {
+  min-height: 28px;
+  border-radius: 3px;
+  padding: 0.06rem 0;
+  gap: 0;
+}
+
+.cost-cal-year .cost-cal-amount {
+  font-size: 8px;
+}
+
+.cost-cal-year .cost-cal-day {
+  font-size: 9px;
 }
 
 .cost-bar {

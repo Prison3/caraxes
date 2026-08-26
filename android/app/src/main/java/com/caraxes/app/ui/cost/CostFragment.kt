@@ -17,10 +17,11 @@ import com.caraxes.app.databinding.FragmentCostBinding
 import com.caraxes.app.ui.bindChoices
 import com.caraxes.app.ui.clearMsg
 import com.caraxes.app.ui.currentMonth
+import com.caraxes.app.ui.currentYear
 import com.caraxes.app.ui.fail
+import com.caraxes.app.ui.pickCostTime
 import com.caraxes.app.ui.showMsg
 import com.caraxes.app.ui.shopsToChoices
-import com.caraxes.app.ui.suppliersToChoices
 import com.caraxes.app.ui.todayIso
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -30,10 +31,12 @@ class CostFragment : Fragment() {
     private val binding get() = _binding!!
     private lateinit var adapter: CostAdapter
     private var started = false
+    private var yearMode = false
+    private var selectedYear = 0
     private var selectedDay = ""
     private var selectedMonth = ""
     private var selectedShopId: Int? = null
-    private var selectedSupplierId: Int? = null
+    private var chartKind = CostChartKind.BAR
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentCostBinding.inflate(inflater, container, false)
@@ -44,24 +47,34 @@ class CostFragment : Fragment() {
         adapter = CostAdapter()
         binding.costList.layoutManager = LinearLayoutManager(requireContext())
         binding.costList.adapter = adapter
+        selectedYear = currentYear()
         selectedDay = todayIso()
         selectedMonth = currentMonth()
         bindFilterChips()
-        binding.groupByGroup.addOnButtonCheckedListener { _, _, isChecked ->
-            if (!isChecked) return@addOnButtonCheckedListener
-            bindFilterChips()
-            if (started) query()
-        }
-        binding.periodGroup.addOnButtonCheckedListener { _, _, isChecked ->
-            if (!isChecked) return@addOnButtonCheckedListener
-            if (started) query()
-        }
-        binding.queryBtn.setOnClickListener { query() }
         binding.chartPrev.setOnClickListener { shiftPeriod(-1) }
         binding.chartNext.setOnClickListener { shiftPeriod(1) }
+        binding.chartTitle.setOnClickListener { openTimePicker() }
+        binding.chartTypeGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked || !started) return@addOnButtonCheckedListener
+            val next = when (checkedId) {
+                R.id.chartTypeKline -> CostChartKind.KLINE
+                R.id.chartTypeCalendar -> CostChartKind.CALENDAR
+                else -> CostChartKind.BAR
+            }
+            if (next != chartKind) {
+                chartKind = next
+                query()
+            }
+        }
         binding.chart.onBarClick = { bar ->
             if (started && bar.key.isNotBlank()) {
-                if (isMonth()) {
+                if (chartKind == CostChartKind.CALENDAR && yearMode && bar.key.length >= 10) {
+                    yearMode = false
+                    selectedDay = bar.key.take(10)
+                    selectedMonth = bar.key.take(7)
+                    selectedYear = bar.key.take(4).toIntOrNull() ?: selectedYear
+                    query()
+                } else if (yearMode) {
                     if (bar.key != selectedMonth) {
                         selectedMonth = bar.key
                         query()
@@ -74,6 +87,7 @@ class CostFragment : Fragment() {
             }
         }
         started = true
+        updateChartTitle()
         loadCatalog()
     }
 
@@ -87,30 +101,13 @@ class CostFragment : Fragment() {
         _binding = null
     }
 
-    private fun isMonth(): Boolean = binding.periodGroup.checkedButtonId == R.id.periodMonth
-
-    private fun groupBy(): String =
-        if (binding.groupByGroup.checkedButtonId == R.id.groupSupplier) "supplier" else "shop"
-
     private fun bindFilterChips() {
-        if (groupBy() == "shop") {
-            binding.filterLabel.text = "店铺"
-            binding.filterChips.bindChoices(
-                shopsToChoices(Catalog.shops, allowEmpty = true),
-                selectedShopId,
-            ) {
-                selectedShopId = it
-                if (started) query()
-            }
-        } else {
-            binding.filterLabel.text = "供应商"
-            binding.filterChips.bindChoices(
-                suppliersToChoices(Catalog.suppliers, allowEmpty = true),
-                selectedSupplierId,
-            ) {
-                selectedSupplierId = it
-                if (started) query()
-            }
+        binding.filterChips.bindChoices(
+            shopsToChoices(Catalog.shops, allowEmpty = true),
+            selectedShopId,
+        ) {
+            selectedShopId = it
+            if (started) query()
         }
     }
 
@@ -127,12 +124,33 @@ class CostFragment : Fragment() {
         }
     }
 
+    private fun openTimePicker() {
+        val monthSeed = selectedMonth.ifBlank {
+            selectedDay.take(7).ifBlank { currentMonth() }
+        }
+        pickCostTime(
+            currentYear = selectedYear.takeIf { it > 0 } ?: currentYear(),
+            currentMonth = monthSeed,
+            onYear = { year ->
+                yearMode = true
+                selectedYear = year
+                selectedMonth = ""
+                query()
+            },
+            onMonth = { month ->
+                yearMode = false
+                selectedMonth = month
+                selectedYear = month.take(4).toIntOrNull() ?: selectedYear
+                selectedDay = if (todayIso().startsWith(month)) todayIso() else "$month-01"
+                query()
+            },
+        )
+    }
+
     private fun shiftPeriod(delta: Int) {
-        if (isMonth()) {
-            val parts = selectedMonth.ifBlank { currentMonth() }.split("-")
-            val year = (parts.getOrNull(0)?.toIntOrNull() ?: Calendar.getInstance().get(Calendar.YEAR)) + delta
-            val month = parts.getOrNull(1)?.toIntOrNull() ?: 1
-            selectedMonth = "%04d-%02d".format(year, month)
+        if (yearMode) {
+            selectedYear = (selectedYear.takeIf { it > 0 } ?: currentYear()) + delta
+            selectedMonth = ""
         } else {
             val parts = selectedDay.ifBlank { todayIso() }.split("-")
             val cal = Calendar.getInstance()
@@ -146,41 +164,39 @@ class CostFragment : Fragment() {
                 cal.get(Calendar.DAY_OF_MONTH),
             )
             selectedMonth = selectedDay.take(7)
+            selectedYear = cal.get(Calendar.YEAR)
         }
         query()
     }
 
     private fun query() {
         clearMsg(binding.costMsg)
-        binding.queryBtn.isEnabled = false
         binding.listMeta.text = "加载中…"
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val shopId = if (groupBy() == "shop") selectedShopId else null
-                val supplierId = if (groupBy() == "supplier") selectedSupplierId else null
-                val report = if (isMonth()) {
+                val report = if (yearMode) {
+                    val year = selectedYear.takeIf { it > 0 } ?: currentYear()
                     ApiClient.get(requireContext()).listCosts(
-                        groupBy = groupBy(),
+                        groupBy = "shop",
                         period = "month",
-                        month = selectedMonth.ifBlank { currentMonth() },
-                        shopId = shopId,
-                        supplierId = supplierId,
+                        month = selectedMonth.takeIf { it.length >= 7 && it.startsWith("%04d".format(year)) },
+                        year = year,
+                        chart = chartKind.apiValue(),
+                        shopId = selectedShopId,
                     )
                 } else {
                     ApiClient.get(requireContext()).listCosts(
-                        groupBy = groupBy(),
+                        groupBy = "shop",
                         period = "day",
                         orderDate = selectedDay.ifBlank { todayIso() },
-                        shopId = shopId,
-                        supplierId = supplierId,
+                        chart = chartKind.apiValue(),
+                        shopId = selectedShopId,
                     )
                 }
                 render(report)
             } catch (e: Exception) {
                 render(CostReportOut())
                 showMsg(binding.costMsg, fail(e), false)
-            } finally {
-                _binding?.queryBtn?.isEnabled = true
             }
         }
     }
@@ -190,8 +206,7 @@ class CostFragment : Fragment() {
         adapter.submit(items)
         binding.costList.isVisible = items.isNotEmpty()
         binding.emptyHint.isVisible = items.isEmpty()
-        val kind = if (report.group_by == "supplier") "供应商" else "店铺"
-        binding.listMeta.text = if (items.isEmpty()) "" else "共 ${items.size} 个$kind"
+        binding.listMeta.text = if (items.isEmpty()) "" else "共 ${items.size} 个店铺"
         if (items.isEmpty()) {
             binding.sumMeta.isVisible = false
         } else {
@@ -199,24 +214,37 @@ class CostFragment : Fragment() {
             binding.sumMeta.text = "合计 ${report.count} 笔  ·  ¥${formatMoney(report.total)}"
         }
         val selected = report.selected.ifBlank {
-            if (isMonth()) selectedMonth else selectedDay
+            if (yearMode) selectedMonth.ifBlank { selectedYear.toString() } else selectedDay
         }
-        if (isMonth() && selected.length >= 7) selectedMonth = selected.take(7)
-        if (!isMonth() && selected.length >= 10) {
+        if (yearMode) {
+            selected.take(4).toIntOrNull()?.let { selectedYear = it }
+            selectedMonth = if (selected.length >= 7) selected.take(7) else ""
+        } else if (selected.length >= 10) {
             selectedDay = selected.take(10)
             selectedMonth = selected.take(7)
+            selected.take(4).toIntOrNull()?.let { selectedYear = it }
         }
-        binding.chartTitle.text = if (isMonth()) {
-            val year = selected.take(4).ifBlank { currentMonth().take(4) }
-            "月柱状 · ${year}年"
-        } else {
-            val month = selected.take(7).ifBlank { currentMonth() }
-            val parts = month.split("-")
-            if (parts.size == 2) "日柱状 · ${parts[0]}年${parts[1].toInt()}月" else "日柱状"
-        }
-        binding.chart.submit(report.buckets, selected)
-        val hasChart = report.buckets.isNotEmpty()
-        binding.chart.isVisible = hasChart
-        binding.chartHead.isVisible = hasChart
+        updateChartTitle()
+        binding.chart.submit(report.buckets, selected, chartKind)
+        binding.chart.isVisible = report.buckets.isNotEmpty()
+        binding.chartHead.isVisible = true
+        binding.chartTypeGroup.isVisible = true
     }
+
+    private fun updateChartTitle() {
+        binding.chartTitle.text = if (yearMode) {
+            val year = selectedYear.takeIf { it > 0 } ?: currentYear()
+            "${year}年 ▾"
+        } else {
+            val month = selectedMonth.ifBlank { selectedDay.take(7).ifBlank { currentMonth() } }
+            val parts = month.split("-")
+            if (parts.size == 2) "${parts[0]}年${parts[1].toInt()}月 ▾" else "选择时间 ▾"
+        }
+    }
+}
+
+private fun CostChartKind.apiValue(): String = when (this) {
+    CostChartKind.BAR -> "bar"
+    CostChartKind.KLINE -> "kline"
+    CostChartKind.CALENDAR -> "calendar"
 }
