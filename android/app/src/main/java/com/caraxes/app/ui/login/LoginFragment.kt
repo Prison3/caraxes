@@ -15,6 +15,7 @@ import com.caraxes.app.data.LoginIn
 import com.caraxes.app.data.Session
 import com.caraxes.app.data.apiErrorMessage
 import com.caraxes.app.databinding.FragmentLoginBinding
+import com.caraxes.app.ui.navigateToHome
 import kotlinx.coroutines.launch
 import java.net.ConnectException
 import java.net.SocketTimeoutException
@@ -78,7 +79,7 @@ class LoginFragment : Fragment() {
                     Session.saveUser(requireContext(), user)
                     (activity as? MainActivity)?.applyRoleTabs()
                     (activity as? MainActivity)?.refreshUsername()
-                    findNavController().navigate(Session.homeDestination(requireContext()))
+                    findNavController().navigateToHome(requireContext())
                 } catch (e: Exception) {
                     val msg = when (e) {
                         is UnknownHostException -> "地址不可达：主机名无法解析"

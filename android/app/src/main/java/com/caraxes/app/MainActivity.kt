@@ -2,12 +2,14 @@ package com.caraxes.app
 
 import android.os.Bundle
 import android.view.View
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.NavHostFragment
 import com.caraxes.app.data.ApiClient
 import com.caraxes.app.data.Session
 import com.caraxes.app.databinding.ActivityMainBinding
+import com.caraxes.app.ui.navigateToHome
 import com.caraxes.app.update.AppUpdateHelper
 import kotlinx.coroutines.launch
 
@@ -28,8 +30,19 @@ class MainActivity : AppCompatActivity() {
         applyRoleTabs()
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
+            if (destination.id == R.id.loginFragment && Session.isLoggedIn(this)) {
+                binding.root.post {
+                    if (navController.currentDestination?.id == R.id.loginFragment &&
+                        Session.isLoggedIn(this)
+                    ) {
+                        navController.navigateToHome(this)
+                        refreshRole()
+                    }
+                }
+                return@addOnDestinationChangedListener
+            }
             if (!Session.isAllowedDestination(this, destination.id) && destination.id != R.id.loginFragment) {
-                navController.navigate(Session.homeDestination(this))
+                navController.navigateToHome(this)
                 return@addOnDestinationChangedListener
             }
             val isLogin = destination.id == R.id.loginFragment
@@ -39,10 +52,26 @@ class MainActivity : AppCompatActivity() {
             if (!isLogin) refreshUsername()
         }
 
-        if (Session.isLoggedIn(this) && navController.currentDestination?.id == R.id.loginFragment) {
-            navController.navigate(Session.homeDestination(this))
-            refreshRole()
-        }
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val destId = navController.currentDestination?.id
+                if (destId == R.id.staffEditFragment) {
+                    navController.navigateUp()
+                    return
+                }
+                if (Session.isLoggedIn(this@MainActivity) && destId != R.id.loginFragment) {
+                    val home = Session.homeDestination(this@MainActivity)
+                    if (destId != home && navController.popBackStack(home, false)) {
+                        return
+                    }
+                    finish()
+                    return
+                }
+                if (!navController.popBackStack()) {
+                    finish()
+                }
+            }
+        })
     }
 
     fun applyRoleTabs() {

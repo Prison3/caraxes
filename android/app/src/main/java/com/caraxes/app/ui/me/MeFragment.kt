@@ -10,7 +10,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
 import com.caraxes.app.BuildConfig
 import com.caraxes.app.MainActivity
@@ -22,6 +21,8 @@ import com.caraxes.app.data.Session
 import com.caraxes.app.databinding.DialogPasswordBinding
 import com.caraxes.app.databinding.FragmentMeBinding
 import com.caraxes.app.ui.fail
+import com.caraxes.app.ui.navigateToHome
+import com.caraxes.app.ui.resetTo
 import com.caraxes.app.update.AppUpdater
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
@@ -186,14 +187,7 @@ class MeFragment : Fragment() {
                         Session.saveUser(requireContext(), user)
                         (activity as? MainActivity)?.applyRoleTabs()
                         (activity as? MainActivity)?.refreshUsername()
-                        findNavController().navigate(
-                            Session.homeDestination(requireContext()),
-                            null,
-                            NavOptions.Builder()
-                                .setPopUpTo(R.id.loginFragment, false)
-                                .setLaunchSingleTop(true)
-                                .build(),
-                        )
+                        findNavController().navigateToHome(requireContext())
                     } catch (e: Exception) {
                         toast(fail(e))
                     }
@@ -212,11 +206,7 @@ class MeFragment : Fragment() {
                 viewLifecycleOwner.lifecycleScope.launch {
                     runCatching { ApiClient.get(requireContext()).logout() }
                     Session.clear(requireContext())
-                    val options = NavOptions.Builder()
-                        .setPopUpTo(findNavController().graph.id, true)
-                        .setLaunchSingleTop(true)
-                        .build()
-                    findNavController().navigate(R.id.loginFragment, null, options)
+                    findNavController().resetTo(R.id.loginFragment)
                 }
             }
             .setNegativeButton("取消", null)

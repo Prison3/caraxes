@@ -8,7 +8,6 @@ import androidx.appcompat.app.AlertDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
 import com.caraxes.app.R
 import com.caraxes.app.data.Session
@@ -217,11 +216,7 @@ fun Fragment.promptRename(title: String, current: String, onConfirm: (String) ->
 fun Fragment.goLoginIfUnauthorized(e: Exception): Boolean {
     if (e is HttpException && e.code() == 401) {
         Session.clear(requireContext())
-        val options = NavOptions.Builder()
-            .setPopUpTo(findNavController().graph.id, true)
-            .setLaunchSingleTop(true)
-            .build()
-        findNavController().navigate(R.id.loginFragment, null, options)
+        findNavController().resetTo(R.id.loginFragment)
         return true
     }
     return false

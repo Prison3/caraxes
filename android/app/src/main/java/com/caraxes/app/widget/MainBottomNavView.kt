@@ -11,9 +11,9 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
-import androidx.navigation.NavGraph
 import androidx.navigation.NavOptions
 import com.caraxes.app.R
+import com.caraxes.app.data.Session
 
 class MainBottomNavView @JvmOverloads constructor(
     context: Context,
@@ -64,7 +64,7 @@ class MainBottomNavView @JvmOverloads constructor(
                     val builder = NavOptions.Builder()
                         .setLaunchSingleTop(true)
                         .setRestoreState(true)
-                        .setPopUpTo(findStartDestination(navController.graph).id, false, true)
+                        .setPopUpTo(Session.homeDestination(context), false, true)
                     navController.navigate(destId, null, builder.build())
                     true
                 } catch (_: IllegalArgumentException) {
@@ -99,13 +99,5 @@ class MainBottomNavView @JvmOverloads constructor(
             current = current.parent
         }
         return false
-    }
-
-    private fun findStartDestination(graph: NavGraph): NavDestination {
-        var start: NavDestination = graph
-        while (start is NavGraph) {
-            start = start.findNode(start.startDestinationId) ?: break
-        }
-        return start
     }
 }
