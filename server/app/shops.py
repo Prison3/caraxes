@@ -11,7 +11,6 @@ from pymongo.errors import DuplicateKeyError
 from .auth import require_user
 from .confirm import require_admin_confirm
 from .database import get_db, next_id
-from .deletions import record_shop_deletion
 from .models import Shop, User, serialize_order_date, utcnow
 from .names import normalize_name
 from .roles import require_admin, scoped_shop_id
@@ -194,7 +193,7 @@ def update_shop(
 def delete_shop(
     shop_id: int,
     db: Database = Depends(get_db),
-    user: User = Depends(require_admin),
+    _admin: User = Depends(require_admin),
     _: None = Depends(require_admin_confirm),
 ):
     doc = db.shops.find_one({"_id": shop_id})
@@ -209,5 +208,4 @@ def delete_shop(
     manager_count = db.users.count_documents({"role": "manager", "shop_id": shop_id})
     if manager_count > 0:
         db.users.delete_many({"role": "manager", "shop_id": shop_id})
-    record_shop_deletion(db, shop_id, doc["name"], operator=user)
     db.shops.delete_one({"_id": shop_id})

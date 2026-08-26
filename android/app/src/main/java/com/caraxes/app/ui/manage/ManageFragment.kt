@@ -5,18 +5,15 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.caraxes.app.R
 import com.caraxes.app.data.ApiClient
 import com.caraxes.app.data.Catalog
-import com.caraxes.app.data.DeletionOut
 import com.caraxes.app.data.NameCreate
 import com.caraxes.app.data.ShopOut
 import com.caraxes.app.data.SupplierOut
 import com.caraxes.app.databinding.FragmentManageBinding
-import com.caraxes.app.databinding.ItemDeletionBinding
 import com.caraxes.app.databinding.ItemManageCardBinding
 import com.caraxes.app.ui.clearMsg
 import com.caraxes.app.ui.fail
@@ -37,7 +34,6 @@ class ManageFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         binding.addShopBtn.setOnClickListener { addShop() }
         binding.addSupplierBtn.setOnClickListener { addSupplier() }
-        binding.clearDeletionsBtn.setOnClickListener { clearDeletions() }
         loadAll()
     }
 
@@ -57,7 +53,6 @@ class ManageFragment : Fragment() {
                 Catalog.refresh(ApiClient.get(requireContext()))
                 renderShops()
                 renderSuppliers()
-                loadDeletions()
             } catch (e: Exception) {
                 showMsg(binding.shopMsg, fail(e), false)
             }
@@ -200,47 +195,6 @@ class ManageFragment : Fragment() {
                     loadAll()
                 } catch (e: Exception) {
                     showMsg(binding.supplierMsg, fail(e), false)
-                }
-            }
-        }
-    }
-
-    private fun loadDeletions() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val list = ApiClient.get(requireContext()).listDeletions()
-                renderDeletions(list)
-            } catch (e: Exception) {
-                renderDeletions(emptyList())
-                binding.deletionEmpty.text = fail(e)
-                binding.deletionEmpty.isVisible = true
-            }
-        }
-    }
-
-    private fun renderDeletions(list: List<DeletionOut>) {
-        binding.deletionList.removeAllViews()
-        binding.deletionEmpty.isVisible = list.isEmpty()
-        binding.clearDeletionsBtn.isVisible = list.isNotEmpty()
-        binding.deletionMeta.text = if (list.isEmpty()) "" else "最近 ${list.size} 条"
-        list.forEach { item ->
-            val row = ItemDeletionBinding.inflate(layoutInflater, binding.deletionList, false)
-            val whenText = item.deleted_at.replace('T', ' ').take(19)
-            val who = item.operator_username.ifBlank { "未知" }
-            row.timeText.text = "$whenText  ·  ${item.kind_label}  ·  $who（${item.operator_role_label}）"
-            row.summary.text = item.summary
-            binding.deletionList.addView(row.root)
-        }
-    }
-
-    private fun clearDeletions() {
-        promptPassword("清空删除记录", "确认清空全部删除记录？\n请输入登录密码后确认。") { password ->
-            viewLifecycleOwner.lifecycleScope.launch {
-                try {
-                    ApiClient.get(requireContext()).clearDeletions(password)
-                    loadDeletions()
-                } catch (e: Exception) {
-                    showMsg(binding.shopMsg, fail(e), false)
                 }
             }
         }

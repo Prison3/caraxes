@@ -13,7 +13,6 @@ from .auth import require_user
 from .catalog import require_shop, require_supplier, shop_name_map, supplier_name_map
 from .confirm import require_admin_confirm
 from .database import get_db, next_id, next_order_no
-from .deletions import record_order_deletion
 from .models import SupplierOrder, User, build_order_doc, serialize_order_date, utcnow
 from .roles import scoped_shop_id
 from .schemas import OrderCreate, OrderOut, OrderUpdate
@@ -262,5 +261,4 @@ def delete_order(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="订单不存在")
     order = _order_out(db, doc)
     _ensure_order_access(user, order.shop_id)
-    record_order_deletion(db, order, operator=user)
     db.supplier_orders.delete_one({"_id": order_id})

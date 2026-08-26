@@ -122,18 +122,6 @@ data class CostReportOut(
     val buckets: List<CostBucket> = emptyList(),
 )
 
-data class DeletionOut(
-    val id: Int = 0,
-    val kind: String = "",
-    val kind_label: String = "",
-    val summary: String = "",
-    val operator_id: Int? = null,
-    val operator_username: String = "",
-    val operator_role: String = "",
-    val operator_role_label: String = "",
-    val deleted_at: String = "",
-)
-
 fun formatMoney(value: Double): String = "%.2f".format(value)
 
 fun almostEqual(a: Double, b: Double): Boolean = kotlin.math.abs(a - b) < 0.001

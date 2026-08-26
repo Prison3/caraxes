@@ -128,45 +128,5 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:orientation="vertical" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="22dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <TextView
-                style="@style/Text.SectionTitle"
-                android:text="最近删除" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/clearDeletionsBtn"
-                style="@style/Widget.Caraxes.Button.Ghost.Danger"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:text="清空"
-                android:visibility="gone" />
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/deletionMeta"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textColor="@color/ink_soft"
-            android:textSize="12sp" />
-
-        <LinearLayout
-            android:id="@+id/deletionList"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:orientation="vertical" />
-
-        <TextView
-            android:id="@+id/deletionEmpty"
-            style="@style/Text.Empty"
-            android:text="暂无删除记录" />
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

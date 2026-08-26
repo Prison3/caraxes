@@ -104,12 +104,6 @@
   let costSelectedMonth = "";
   let lastCostReport = null;
 
-  const deletionList = document.getElementById("deletionList");
-  const deletionTableWrap = document.getElementById("deletionTableWrap");
-  const deletionEmpty = document.getElementById("deletionEmpty");
-  const deletionMeta = document.getElementById("deletionMeta");
-  const clearDeletionsBtn = document.getElementById("clearDeletionsBtn");
-
   const dupModal = document.getElementById("dupModal");
   const dupTitle = document.getElementById("dupTitle");
   const dupText = document.getElementById("dupText");
@@ -923,83 +917,6 @@
     }
   }
 
-  function formatDeletedAt(value) {
-    if (!value) return "";
-    const d = new Date(value);
-    if (Number.isNaN(d.getTime())) return String(value).replace("T", " ").slice(0, 19);
-    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
-  }
-
-  function deletionLimit() {
-    return document.documentElement.classList.contains("is-pc") ? 50 : 20;
-  }
-
-  function renderDeletions(items) {
-    deletionList.innerHTML = "";
-    const hasItems = items.length > 0;
-    deletionEmpty.hidden = hasItems;
-    deletionEmpty.textContent = "暂无删除记录";
-    deletionTableWrap.hidden = !hasItems;
-    deletionMeta.textContent = hasItems ? `最近 ${items.length} 条` : "";
-    if (clearDeletionsBtn) clearDeletionsBtn.hidden = !hasItems;
-
-    for (const item of items) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td class="col-date"></td>
-        <td class="col-kind"></td>
-        <td class="col-operator"></td>
-        <td class="col-summary"></td>
-      `;
-      tr.querySelector(".col-date").textContent = formatDeletedAt(item.deleted_at);
-      tr.querySelector(".col-kind").textContent = item.kind_label || item.kind || "";
-      const operator = item.operator_username || "—";
-      const roleLabel = item.operator_role_label || "";
-      tr.querySelector(".col-operator").textContent = roleLabel
-        ? `${operator}（${roleLabel}）`
-        : operator;
-      tr.querySelector(".col-summary").textContent = item.summary || "";
-      deletionList.appendChild(tr);
-    }
-  }
-
-  async function loadDeletions() {
-    try {
-      const res = await api(`/api/deletions?limit=${deletionLimit()}`);
-      if (!res.ok) throw new Error(await parseError(res));
-      renderDeletions(await res.json());
-    } catch (err) {
-      renderDeletions([]);
-      deletionMeta.textContent = "";
-      deletionEmpty.hidden = false;
-      deletionEmpty.textContent = err.message || "加载删除记录失败";
-    }
-  }
-
-  async function clearAllDeletions() {
-    if (!isAdmin()) return;
-    const password = await confirmDelete("确认清空全部最近删除记录？此操作不可恢复。");
-    if (!password) return;
-    const res = await api("/api/deletions", {
-      method: "DELETE",
-      headers: adminConfirmHeaders(password),
-    });
-    if (!res.ok && res.status !== 204) {
-      showMsg(shopMsg, await parseError(res), false);
-      return;
-    }
-    showMsg(shopMsg, "最近删除记录已清空", true);
-    await loadDeletions();
-  }
-
-  if (clearDeletionsBtn) {
-    clearDeletionsBtn.addEventListener("click", () => {
-      clearAllDeletions().catch((err) => {
-        showMsg(shopMsg, err.message || "清空失败", false);
-      });
-    });
-  }
-
   function renderQueryPickers() {
     renderChipPicker(queryShopPicker, queryShopId, shops, {
       allowEmpty: !isManager(),
@@ -1059,7 +976,7 @@
     if (isAdmin()) {
       renderShopManageList();
       renderSupplierManageList();
-      await Promise.all([loadManagers(), loadDeletions()]);
+      await loadManagers();
     }
   }
 
@@ -1698,7 +1615,6 @@
 
   window.addEventListener("devicechange", () => {
     if (!panelCreate.hidden) loadRecentOrders();
-    if (!panelManage.hidden) loadDeletions();
   });
 
   function renderOrders(orders) {

@@ -1540,45 +1540,6 @@ html.is-mobile .orders-readable {
   --fs-base: 1rem;
 }
 
-.deletion-block {
-  margin-top: 1.75rem;
-  padding-top: 0.25rem;
-  border-top: 1px solid var(--line);
-}
-
-.list-head-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  flex-shrink: 0;
-}
-
-.clear-deletions-btn {
-  height: 32px;
-  padding: 0 0.75rem;
-  font-size: var(--fs-xs, 0.75rem);
-}
-
-.clear-deletions-btn[hidden] {
-  display: none;
-}
-
-.deletion-block .col-kind {
-  white-space: nowrap;
-  width: 4.5rem;
-}
-
-.deletion-block .col-operator {
-  white-space: nowrap;
-  max-width: 8rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.deletion-block .col-summary {
-  word-break: break-word;
-}
-
 .urole {
   font-size: var(--fs-xs, 0.75rem);
   color: rgba(255, 255, 255, 0.75);

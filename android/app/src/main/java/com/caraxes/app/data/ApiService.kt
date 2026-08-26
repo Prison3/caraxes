@@ -121,12 +121,6 @@ interface ApiService {
         @Query("supplier_id") supplierId: Int? = null,
     ): CostReportOut
 
-    @GET("api/deletions")
-    suspend fun listDeletions(@Query("limit") limit: Int = 30): List<DeletionOut>
-
-    @DELETE("api/deletions")
-    suspend fun clearDeletions(@Header("X-Admin-Confirm") password: String)
-
     @GET("api/app/info")
     suspend fun appInfo(): AppReleaseInfo
 
