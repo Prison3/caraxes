@@ -37,8 +37,8 @@ android {
         targetSdk 34
         versionCode gitVersionCode
         versionName gitVersionName
-        // 模拟器访问本机后端；真机请在登录页「服务器设置」改为电脑局域网 IP
-        buildConfigField "String", "BASE_URL", '"http://10.0.2.2:8000/"'
+        // 默认连线上服务；本机/模拟器可在登录页「服务器设置」改为 10.0.2.2:8000 等
+        buildConfigField "String", "BASE_URL", '"http://8.146.225.19:8000/"'
     }
 
     buildTypes {

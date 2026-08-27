@@ -18,7 +18,7 @@ PBKDF2_ITERATIONS = 120_000
 SESSION_KEY = "user_id"
 SESSION_LOGIN_AT = "login_at"
 SESSION_IMPERSONATOR = "impersonator_id"
-SESSION_MAX_AGE = 45 * 60
+SESSION_MAX_AGE = 7 * 24 * 60 * 60
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 

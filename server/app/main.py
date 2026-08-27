@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from .app_release import router as app_release_router
-from .auth import get_session_secret, require_user, router as auth_router
+from .auth import SESSION_MAX_AGE, get_session_secret, require_user, router as auth_router
 from .costs import router as costs_router
 from .database import ensure_indexes
 from .routers import router as orders_router
@@ -39,7 +39,7 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=get_session_secret(),
     session_cookie="caraxes_session",
-    max_age=45 * 60,
+    max_age=SESSION_MAX_AGE,
     same_site="lax",
     https_only=False,
 )
