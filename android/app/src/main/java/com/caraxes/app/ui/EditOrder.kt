@@ -32,6 +32,7 @@ fun Fragment.showEditOrderDialog(order: OrderOut, onSaved: () -> Unit) {
         suppliersToChoices(Catalog.suppliers, allowEmpty = false),
         selectedSupplierId,
         locked = false,
+        columns = SUPPLIER_COLUMNS,
     ) { selectedSupplierId = it }
     content.editOrderDate.setOnClickListener {
         pickDate(content.editOrderDate.text?.toString().orEmpty().ifBlank { todayIso() }) {

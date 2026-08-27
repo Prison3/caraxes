@@ -48,11 +48,13 @@ fun suppliersToChoices(
 }
 
 private const val CHOICE_COLUMNS = 4
+internal const val SUPPLIER_COLUMNS = 3
 
 fun ChipGroup.bindChoices(
     items: List<Choice>,
     selectedId: Int?,
     locked: Boolean = false,
+    columns: Int = CHOICE_COLUMNS,
     onSelect: (Int?) -> Unit,
 ) {
     setOnCheckedStateChangeListener(null)
@@ -83,13 +85,21 @@ fun ChipGroup.bindChoices(
         chip.maxLines = 1
         chip.gravity = Gravity.CENTER
         chip.textAlignment = View.TEXT_ALIGNMENT_CENTER
-        chip.chipStartPadding = 4 * density
-        chip.chipEndPadding = 4 * density
-        chip.textStartPadding = 2 * density
-        chip.textEndPadding = 2 * density
+        if (columns == SUPPLIER_COLUMNS) {
+            chip.textSize = 11f
+            chip.chipStartPadding = 3 * density
+            chip.chipEndPadding = 3 * density
+            chip.textStartPadding = 1 * density
+            chip.textEndPadding = 1 * density
+        } else {
+            chip.chipStartPadding = 4 * density
+            chip.chipEndPadding = 4 * density
+            chip.textStartPadding = 2 * density
+            chip.textEndPadding = 2 * density
+        }
         addView(chip)
     }
-    doOnLayout { applyEqualColumns(CHOICE_COLUMNS) }
+    doOnLayout { applyEqualColumns(columns) }
     setOnCheckedStateChangeListener { group, checkedIds ->
         if (locked) return@setOnCheckedStateChangeListener
         val chipId = checkedIds.firstOrNull() ?: return@setOnCheckedStateChangeListener

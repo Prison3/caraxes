@@ -1028,6 +1028,15 @@ html.is-pc .chip-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.chip-grid.chip-cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.chip-grid.chip-cols-3 .chip {
+  font-size: var(--fs-xs);
+  padding: 0.35rem 0.28rem;
+}
+
 .chip {
   min-height: 40px;
   padding: 0.4rem 0.32rem;
@@ -1111,6 +1120,11 @@ html.is-pc .chip-grid {
 
 html.is-mobile .chip-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+html.is-mobile .chip-grid.chip-cols-3,
+html.is-pc .chip-grid.chip-cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 html.is-pc .manage-grid {

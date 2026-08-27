@@ -16,6 +16,7 @@ import com.caraxes.app.data.Session
 import com.caraxes.app.data.formatMoney
 import com.caraxes.app.databinding.FragmentQueryBinding
 import com.caraxes.app.ui.OrderAdapter
+import com.caraxes.app.ui.SUPPLIER_COLUMNS
 import com.caraxes.app.ui.bindChoices
 import com.caraxes.app.ui.clearMsg
 import com.caraxes.app.ui.currentMonth
@@ -157,6 +158,7 @@ class QueryFragment : Fragment() {
             suppliersToChoices(Catalog.suppliers, allowEmpty = true),
             selectedSupplierId,
             locked = false,
+            columns = SUPPLIER_COLUMNS,
         ) { selectedSupplierId = it; if (ready) query() }
     }
 

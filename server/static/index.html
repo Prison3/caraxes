@@ -7,7 +7,7 @@
   <link rel="icon" type="image/png" href="/static/favicon.png" />
   <link rel="apple-touch-icon" href="/static/apple-touch-icon.png" />
   <script src="/static/device.js?v=2"></script>
-  <link rel="stylesheet" href="/static/style.css?v=20260827a" />
+  <link rel="stylesheet" href="/static/style.css?v=20260827c" />
 </head>
 <body>
   <header class="topbar">
@@ -66,7 +66,7 @@
         <div class="choice-field">
           <span class="choice-label">供应商名</span>
           <input type="hidden" id="supplierId" name="supplier_id" value="" />
-          <div id="supplierPicker" class="chip-grid" role="listbox" aria-label="选择供应商"></div>
+          <div id="supplierPicker" class="chip-grid chip-cols-3" role="listbox" aria-label="选择供应商"></div>
         </div>
         <label>
           单日总金额
@@ -148,7 +148,7 @@
         <div class="choice-field">
           <span class="choice-label">供应商名</span>
           <input type="hidden" id="querySupplierId" value="" />
-          <div id="querySupplierPicker" class="chip-grid" role="listbox" aria-label="筛选供应商"></div>
+          <div id="querySupplierPicker" class="chip-grid chip-cols-3" role="listbox" aria-label="筛选供应商"></div>
         </div>
         <div class="query-actions">
           <button type="button" id="resetQueryBtn" class="btn-secondary">重置</button>
@@ -399,7 +399,7 @@
         <div class="choice-field">
           <span class="choice-label">供应商名</span>
           <input type="hidden" id="editSupplierId" value="" />
-          <div id="editSupplierPicker" class="chip-grid" role="listbox" aria-label="选择供应商"></div>
+          <div id="editSupplierPicker" class="chip-grid chip-cols-3" role="listbox" aria-label="选择供应商"></div>
         </div>
         <label>
           单日总金额
@@ -441,6 +441,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=20260827a"></script>
+  <script src="/static/app.js?v=20260827c"></script>
 </body>
 </html>

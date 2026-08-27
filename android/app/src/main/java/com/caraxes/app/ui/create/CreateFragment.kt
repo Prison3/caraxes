@@ -16,6 +16,7 @@ import com.caraxes.app.data.Session
 import com.caraxes.app.data.almostEqual
 import com.caraxes.app.databinding.FragmentCreateBinding
 import com.caraxes.app.ui.OrderAdapter
+import com.caraxes.app.ui.SUPPLIER_COLUMNS
 import com.caraxes.app.ui.bindChoices
 import com.caraxes.app.ui.clearMsg
 import com.caraxes.app.ui.fail
@@ -102,6 +103,7 @@ class CreateFragment : Fragment() {
             suppliersToChoices(Catalog.suppliers, allowEmpty = false),
             selectedSupplierId,
             locked = false,
+            columns = SUPPLIER_COLUMNS,
         ) { selectedSupplierId = it }
     }
 
